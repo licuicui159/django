@@ -557,7 +557,6 @@ def  cal_view(request,x,op,y):
     | HttpResponseServerError | 服务器错误 | 500 |
 
 
-
 ### GET方式传参
 - GET请求方式中可以通过查询字符串(Query String)将数据传递给服务器    
 
@@ -585,10 +584,42 @@ def  cal_view(request,x,op,y):
             
             # request.GET=QueryDict({'a':['100'], 'b':['200','400'], 'c':['300']})
             # a = request.GET['a']
-            # b = request.GET['b']  # Error
-            
-            
+            # b = request.GET['b']  # Error    
             ```
+        '''
+        urls.py
+        '''  
+        # http://127.0.0.1:8000/page1
+        url(r'^page1$',views.page1_view),
+        '''
+        views.py
+        get方法获取数据函数
+        '''
+        
+        post_html='''<form method='post' action="/page2">
+            姓名:<input type="text" name="username">
+            <input type='submit' value='登陆'>
+        </form>'''
+        def  page1_view(request):
+
+            print('==')
+            #http://127.0.0.1:8000/page1?a=11111
+            print(request.GET.get('a')) #11111
+            print('===')
+
+            #http://127.0.0.1:8000/page1?a=11111
+            print('&&')
+            print(request.GET.getlist('a')) #['11111', '123456', '789']
+            print('&&')
+
+            # http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
+            print('***')
+            print(dict(request.GET))  #  {'a': ['11111', '123456', '789'], 'b': ['654']}
+            print('***')
+
+            return HttpResponse(post_html)
+        
+        
         2. 能够产生get请求方式的场合
             1. 地址栏手动输入, 如: http://127.0.0.1:8000/mypage?a=100&b=200
             2. `<a href="地址?参数=值&参数=值">`
@@ -610,6 +641,29 @@ def  cal_view(request,x,op,y):
         - 页面显示: 结果: 2550
         - 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=2
         - 页面显示: 结果: 2500
+        
+        '''请求的分发入口'''
+        urlpatterns = [
+        # http://127.0.0.1:8000/admin
+        url(r'^admin/', admin.site.urls),
+
+        # http://127.0.0.1:8000/sum?start=1&stop=101&step=2
+        url(r'^sum?',views.sum_view)]
+        
+        '''sum(range(start,stop,step,))函数编写'''
+        def  sum_view(request):
+        # - 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
+        #  - 页面显示: 结果: 5050
+        start=int(request.GET.get('start'))
+        print('start=',start)
+        step=int(request.GET.get('step'))
+        print('step=',step)
+        stop=int(request.GET.get('stop'))
+        print('stop=',stop)
+        # 开始计算
+        res=sum(range(start,stop,step,))
+        print('sum=',res)
+        return HttpResponse(res)
 
 - 练习:
     - 访问地址:<http://127.0.0.1:8000/birthday?year=四位整数&month=整数&day=整数>
@@ -624,12 +678,8 @@ def  cal_view(request,x,op,y):
 
 - 客户端通过表单等POST请求将数据传递给服务器端,如:
 
-```html
-<form method='post' action="/login">
-    姓名:<input type="text" name="username">
-    <input type='submit' value='登陆'>
-</form>
-```
+
+
 
 - 服务器端接收参数
 
@@ -691,6 +741,154 @@ def  cal_view(request,x,op,y):
       <input type="submit" value="提交">
   </form>
   ```
+ 
+
+'''
+urls.py
+请求的分发入口
+'''
+    from django.conf.urls import url
+    from django.contrib import admin
+    from . import views
+
+    urlpatterns = [
+        # http://127.0.0.1:8000/admin
+        url(r'^admin/', admin.site.urls),
+
+        # http://127.0.0.1:8000/sum?start=1&stop=3&step=1
+        # url(r'^sum(?P<start>\d+)/(?P<stop>\d+)/(?P<step>\d+)',views.sum_view),
+        url(r'^sum?',views.sum_view),
 
 
+        # http://127.0.0.1:8000
+        url(r'^$', views.index_view),
 
+        # http://127.0.0.1:8000/page1
+        url(r'^page1$',views.page1_view),
+
+        # http://127.0.0.1:8000/page2
+        url(r'^page2$', views.page2_view),
+
+        # http://127.0.0.1:8000/pagen
+        url(r'^page(\d+)', views.pagen_view),
+
+        # http://127.0.0.1:8000/100/add/200
+        url(r'^(\d+)/(\w+)/(\d+)', views.cal_view),
+
+        # http://127.0.0.1:8000/person/xiaoming/20
+        url(r'^person/(?P<name>\w+)/(?P<age>\d{1,2})',views.person_view),
+
+        # http://127.0.0.1:8000/birthday/2019/12/27
+        url(r'^birthday/(?P<y>\d{4})/(?P<m>\d{1,2})/(?P<d>\d{1,2})', views.birthday_view),
+
+        # http://127.0.0.1:8000/birthday/12/27/2019
+        url(r'^birthday/(?P<m>\d{1,2})/(?P<d>\d{1,2})/(?P<y>\d{4})',views.birthday_view),
+
+    ]
+
+'''viwes.py
+功能函数
+'''
+    from django.http import HttpResponse
+
+    post_html='''<form method='post' action="/page2">
+        姓名:<input type="text" name="username">
+        <input type='submit' value='登陆'>
+    </form>'''
+
+    post2_html='''
+    <form action="/page1" method="POST">
+          <input name="title" type="text" value="请输入">
+          <select name="gender">
+              <option value=1>男</option>
+              <option value=0>女</option>
+          </select>
+          <textarea name="comment" rows="5" cols="10">附言...</textarea>
+          <input type="submit" value="提交">
+      </form>
+    '''
+
+    def  sum_view(request):
+       # - 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
+      #  - 页面显示: 结果: 5050
+
+        start=int(request.GET.get('start'))
+        print('start=',start)
+        step=int(request.GET.get('step'))
+        print('step=',step)
+        stop=int(request.GET.get('stop'))
+        print('stop=',stop)
+        # 开始计算
+        res=sum(range(start,stop,step,))
+        print('sum=',res)
+        return HttpResponse(res)
+
+    def  page1_view(request):
+        print('==')
+        #http://127.0.0.1:8000/page1?a=11111
+        print(request.GET.get('a')) #11111
+
+        print('===')
+
+        #http://127.0.0.1:8000/page1?a=11111
+        print('&&')
+        print(request.GET.getlist('a')) #['11111', '123456', '789']
+
+        print('&&')
+
+        # http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
+        print('***')
+        print(dict(request.GET))  #  {'a': ['11111', '123456', '789'], 'b': ['654']}
+
+        print('***')
+        html='<h1>这是编号为1的网页</h1>'
+        return HttpResponse(post_html)
+
+
+    def  page2_view(request):
+        if request.method=='POST':
+            print('my post username is')
+            print(request.POST.get('user name'))
+
+
+        html='<h1>这是编号为2的网页</h1>'
+        return HttpResponse(post2_html)
+
+
+    def  index_view(request):
+        html='<h1>这是我的首页</h1>'
+        return HttpResponse(html)
+
+
+    # 加载pagen个页面
+    def  pagen_view(request,n):
+        html='<h1>==这是编号为 %s 的网页==</h1>'% n
+        return HttpResponse(html)
+
+    # 加载名为100/add/200页面
+    def  cal_view(request,x,op,y):
+        x=int(x)
+        y=int(y)
+        if op not in ['mul','add','sub']:
+            return HttpResponse('Sorry~Your canshu is wrong!!')
+
+        # 开始计算
+        res=None
+        if op=='add':
+            res=x+y
+        elif op=='mul':
+            res=x*y
+        else :
+            res=x-y
+        return HttpResponse(res)
+
+    # file : <项目名>/views.py
+    def person_view(request,name,age):
+        res="姓名"+name
+        res+="年龄"+age
+        return HttpResponse(res)
+
+    def birthday_view(request,y,m,d):
+
+        res="生日："+y+"年"+m+"月"+d+"日"
+        return HttpResponse(res)
