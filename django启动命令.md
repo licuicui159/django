@@ -1,37 +1,43 @@
-知识点汇总
+# 创建项目
 
-一、创建项目
 cd 1907/base04/django/ ->cd 到目录
 django-admin startproject 项目名  ->创建项目
 python3 manage.py startapp sports ->创建应用
 
-二、启动项目
+# 启动项目
+
 cd 1907/base04/django/day03_note/mysite3 ->cd 到目录
 ls    ->找到  manage.py
 python3 manage.py runserver ->开启调试环境
 
-三、调试前操作 setting.py 
-    1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
-    2.57行  TEMPLATES = [{
-            'DIRS':[os.path.join(BASE_DIR, 'templates')],        
-            }]     
-    3.106行 LANGUAGE_CODE = 'zh-Hans'
-    4.108行 TIME_ZONE = 'Asia/Shanghai' 
-    5.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
-    
-*****************************************    
-    6.有静态文件请求，文件最后一行加上代码   
-STATICFILES_DIRS = (
+# 调试前 setting.py配置 
+
+​    1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
+​    2.57行  TEMPLATES = [{
+​            'DIRS':[os.path.join(BASE_DIR, 'templates')],        
+​            }]     
+​    3.106行 LANGUAGE_CODE = 'zh-Hans'
+​    4.108行 TIME_ZONE = 'Asia/Shanghai' 
+​    5.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
+​    
+
+# 有静态文件请求，文件最后一行加上代码   
+
+6.STATICFILES_DIRS = (
             os.path.join(BASE_DIR, "static"),
         )
-    7.APP安装应用配置 33行
-        INSTALLED_APPS = [
-            ...,
-            'user',  # 用户信息模块
-            'music',  # 收藏模块
-        ]		
-		
-	8. 数据库配置  80行
+
+# APP安装应用配置 33行
+
+​        INSTALLED_APPS = [
+​            ...,
+​            'user',  # 用户信息模块
+​            'music',  # 收藏模块
+​        ]		
+
+#### 数据库配置  80行
+
+
 		第一步：
 		#files:setting.py
 		DATABASES = {
@@ -46,15 +52,15 @@ STATICFILES_DIRS = (
 	}
 		
 		第二步：
-        
-        # 安装pymysql 模块
-        $ sudo pip install pymysql
+	    
+	    # 安装pymysql 模块
+	    $ sudo pip install pymysql
 		$ mysql -uroot -p
 		$ create database mysite3 default charset utf8 collate utf8_general_ci;
 		$ show databases;
 		$ use mysites3;
 		$ show tables;
-        
+	    
 		# files:__init__.py  提供pymysql引擎支持
 		import pymysql
 		pymysql.install_as_MySQLdb()
@@ -65,33 +71,33 @@ STATICFILES_DIRS = (
 		class Bookstore(models.Model):
 			title = models.CharField("姓名",max_length=20)
 			price = models.DecimalField("定价",max_digits=5,decimal_places=2,default=0.0)
+	
+	    # DateTime=models.DateTimeField()
+	    default='2019-10-01 18:15:20'
+	    # ImageField() --用户上传头像图
+	    image=models.ImageField(
+	        upload_to="static/images")
 
-        # DateTime=models.DateTimeField()
-        default='2019-10-01 18:15:20'
-        # ImageField() --用户上传头像图
-        image=models.ImageField(
-            upload_to="static/images")
-        #
-            
+#### **每次修改完模型类都需要做以下两步迁移操作。**​	
 
-		第三步：**每次修改完模型类都需要做以下两步迁移操作。**
-		# 终端执行
-        1.生成或更新迁移文件
+```
+	    1.生成或更新迁移文件
 		python3 manage.py makemigrations
-        2.执行迁移脚本程序
+	    2.执行迁移脚本程序
 		python3 manage.py migrate
+```
 
-        
-- 数据库的迁移文件混乱的解决办法
-    1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
-    2. 删除 数据表
-        - sql> drop database mywebdb;
-    3. 重新创建 数据表
-        - sql> create datebase mywebdb default charset...;
-    4. 重新生成migrations里所有的 000?_XXXX.py
-        - python3 manage.py makemigrations
-    5. 重新更新数据库
-        - python3 manage.py migrate
+# 数据库的迁移文件混乱的解决办法
+
+1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
+2. 删除 数据表
+    - sql> drop database mywebdb;
+3. 重新创建 数据表
+    - sql> create datebase mywebdb default charset...;
+4. 重新生成migrations里所有的 000?_XXXX.py
+    - python3 manage.py makemigrations
+5. 重新更新数据库
+    - python3 manage.py migrate
 
 *****************************************
 
@@ -112,21 +118,28 @@ from django.template import loader
 from django.shortcuts import render
 
 # render/loader加载模板
+```
 def index(request):
-    # 1 通过loader加载模板
-    # t=loader.get_template('test.html')
-    #
-    # # 2 t对象转化成 html字符串
-    # html=t.render()
-    #
-    # # 3 将html return 至 浏览器
-    # return HttpResponse(html)
+
+# 1 通过loader加载模板
+t=loader.get_template('test.html')
+
+# 2 t对象转化成 html字符串
+html=t.render()
+
+# 3 将html return 至 浏览器
+return HttpResponse(html)
+```
 
     # render方案
     dic={'username': 'guoxiaonao', 'age': 18}
     return render(request, 'test.html', dic)
 
-# - 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
+# sum(range(start,stop,step,))
+
+输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
+
+```
 def  sum_view(request):
     start=int(request.GET.get('start'))
     print('start=',start)
@@ -134,13 +147,21 @@ def  sum_view(request):
     print('step=',step)
     stop=int(request.GET.get('stop'))
     print('stop=',stop)
-    # 开始计算
-    res=sum(range(start,stop,step,))
-    print('sum=',res)
-    return HttpResponse(res)
-url(r'^sum?',views.sum_view),
 
-# GET方法  查看网页 http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
+    ###### 开始计算
+
+​    res=sum(range(start,stop,step,))
+​    print('sum=',res)
+​    return HttpResponse(res)
+url(r'^sum?',views.sum_view),
+```
+
+
+
+# GET方法  查看网页
+
+ http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
+
 def  page1_view(request):
     if request.method=='GET':
         #http://127.0.0.1:8000/page1?a=11111
@@ -148,14 +169,17 @@ def  page1_view(request):
 
         #http://127.0.0.1:8000/page1?a=11111
         print(request.GET.getlist('a')) #['11111', '123456', '789']
-
+    
         # http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
         print(dict(request.GET))  #  {'a': ['11111', '123456', '789'], 'b': ['654']}
         html='<h1>这是编号为1的网页</h1>'
     return HttpResponse(post_html)
 url(r'^page1$',views.page1_view),
 
-# POST方法  提交表单或者上传文件，用于新资源的建立和/或已有资源的修改。
+# POST方法  提交表单或者上传文件
+
+用于新资源的建立和/或已有资源的修改。
+
 def  page2_view(request):
     if request.method=='POST':
         print('my post username is')
@@ -170,7 +194,8 @@ def  pagen_view(request,n):
     return HttpResponse(html)
 url(r'^page(\d+)', views.pagen_view),
 
-# http://127.0.0.1:8000/100/add/200 加减乘除
+http://127.0.0.1:8000/100/add/200 加减乘除
+
 def  cal_view(request,x,op,y):
     x=int(x)
     y=int(y)
@@ -191,15 +216,23 @@ def person_view(request,name,age):
     res="姓名"+name
     res+="年龄"+age
     return HttpResponse(res)
-# http://127.0.0.1:8000/person/xiaoming/20
+# 加载用户姓名
+
+http://127.0.0.1:8000/person/xiaoming/20
+
 url(r'^person/(?P<name>\w+)/(?P<age>\d{1,2})',views.person_view),
 
 def birthday_view(request,y,m,d):
     res="生日："+y+"年"+m+"月"+d+"日"
     return HttpResponse(res)
-# http://127.0.0.1:8000/birthday/2019/12/27
+# 两种生日形式
+
+http://127.0.0.1:8000/birthday/2019/12/27
+
 url(r'^birthday/(?P<y>\d{4})/(?P<m>\d{1,2})/(?P<d>\d{1,2})', views.birthday_view),
-# http://127.0.0.1:8000/birthday/12/27/2019
+
+http://127.0.0.1:8000/birthday/12/27/2019
+
 url(r'^birthday/(?P<m>\d{1,2})/(?P<d>\d{1,2})/(?P<y>\d{4})',views.birthday_view),
 
 # 页面传参
@@ -230,7 +263,7 @@ test_p.html
     <p>
         script 结果是 {{ script|safe }}
     </p>
-
+    
     <p>
         number 结果是 {{ number.age|add:2 }}
     </p>
@@ -264,7 +297,7 @@ def cal_view(request):
 
         # text框 空提交时 浏览器会带上具体text框的name及空值一并提交到服务器
         # x=int(request.POST.get('x',100))
-
+    
         x=request.POST.get('x')
         if not x:
             # 错误处理 将提示信息返给浏览器
@@ -282,11 +315,11 @@ def cal_view(request):
                 error='The x is must be number!!'
                 dic={'error': error}
                 return render(request, 'cal.html', dic)
-
+    
         # TODO 检查y值；方法同上
-
+    
         op=request.POST.get('op')
-
+    
         y=request.POST.get('y')
         if not y:
             # 错误处理 将提示信息返给浏览器
@@ -416,4 +449,3 @@ def sports_view(request):
                 {% block block_name %}
                 子模板块用来覆盖父模板中 block_name 块的内容
                 {% endblock block_name %}                 
---------------------------------------------------------
