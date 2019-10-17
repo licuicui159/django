@@ -1,0 +1,35 @@
+确认当前环境Django 
+pip3 freeze|grep 'Django'
+-->Django==1.11.8
+
+
+如果版本号不是1.11.8，执行如下操作：
+pip3 uninstall Django
+pip3 install Django==1.11.8
+
+笔记本
+pip3 install celery
+确认当前环境Django 
+pip3 freeze|grep 'Django'
+
+celery分布式任务队列
+文档：http://docs.jinkan.org/docs/celery/
+检测 版本:
+pip3 freeze|grep 'celery'
+安装celery:
+sudo pip3 install celery
+
+安装成功后检测 版本:
+tarena@tarena:~$ pip3 freeze|grep 'celery'
+celery==4.3.0
+tarena@tarena:~$ pip3 freeze|grep 'Django'
+Django==1.11.8
+tarena@tarena:~$ 
+
+如果版本不对 请执行 卸载+指定版本安装 ex:
+卸载 -> sudo pip3 uninstall Django
+指定版本安装-> sudo pip3 install Django==1.11.8
+
+安装中途 出现红字报错， 请先翻译一下，大概率是 权限+网络不太好
+
+
