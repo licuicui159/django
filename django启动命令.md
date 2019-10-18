@@ -1,103 +1,249 @@
-# 创建项目
-
-cd 1907/base04/django/ ->cd 到目录
-django-admin startproject 项目名  ->创建项目
-python3 manage.py startapp sports ->创建应用
-
 # 启动项目
-
-cd 1907/base04/django/day03_note/mysite3 ->cd 到目录
+cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
 ls    ->找到  manage.py
-python3 manage.py runserver ->开启调试环境
+python3 manage.py runserver ->开启调试环境 
 
-# 调试前 setting.py配置 
+# 每次修改完模型类都需要做以下两步迁移操作
+python3 manage.py makemigrations ->生成迁移文件
+python3 manage.py migrate ->将迁移文件中的表结构同步至数据库
 
-​    1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
-​    2.57行  TEMPLATES = [{
-​            'DIRS':[os.path.join(BASE_DIR, 'templates')],        
-​            }]     
-​    3.106行 LANGUAGE_CODE = 'zh-Hans'
-​    4.108行 TIME_ZONE = 'Asia/Shanghai' 
-​    5.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
-​    
+3.查看表
+$ mysql -uroot -p
+$ show databases;
+$ use mysite4;
+$ show tables;
 
-# 有静态文件请求，文件最后一行加上代码   
+python3 manage.py shell ->进入交互模式，模拟进入pymysql操作数据库
 
-6.STATICFILES_DIRS = (
-            os.path.join(BASE_DIR, "static"),
-        )
+from bookstore.models import Book,Author,BookStore
 
+mysql> select * from bookstore_bookstore;
+
+#4.数据库查询
+```
+    # files:bookstore.models.py 设置
+    class Book(models.Model):
+        def __str__(self):
+            return '<%s>' % (self.title)
+    ``` 
+##查询实体中所有的数据
+all_res=Book.objects.all()
+for book in all_res:
+    print(book.title)
+##取values ，返回字典
+Book.objects.values("title", "pub")
+all_values=Book.objects.values("title", "pub")
+for book in all_values:
+   print(book['title'])
+
+##取values ，返回元组
+all_list=Book.objects.values_list("title", "pub")
+for book in all_list:
+    print("book=", book)
+
+## 降序排列
+all_p=Book.objects.order_by("-price")
+for book in all_p:
+    print("书名:", book.title, '定价:', book.price)
+
+## get
+try:
+except
+Book.objects.get(pub='')
+    
+## 数组等值查询
+In [11]: all_q=Book.objects.filter(pub='清华大学出版社',title='python3')
+In [12]: all_q
+Out[12]: <QuerySet [<Book: Book object>]>
+
+1. 查询Book表中price大于等于50的信息
+Book.objects.filter(price__gte=50)
+
+2. 查询Author表中姓王的人的信息
+
+Author.objects.filter(name__startswith='王')
+
+3. 查询Author表中Email中包含"wc"的人的信息
+Author.objects.filter(email__in=['wc'])  
+
+4.批量修改：shell操作
+eg：修改'清华大学出版社'图书的零售价均为40
+update_books = Book.objects.filter(pub='清华大学出版社')
+update_books.update(market_price=40)
+
+5.删除
+def delete_book(request,book_id):
+    try:
+        book=Book.objects.get(id=book_id)
+        book.delete()
+    except:
+        return HttpResponse('您提交的数据有误，请刷新重试')
+    return HttpResponseRedirect('/bookstore/all_book')
+
+5.1批量删除
+In [8]: delete_books = Book.objects.filter(pub='清华大学出版社')
+In [9]: delete_books.delete()
+
+    
+    
+    
+# 执行应用流程
+# 创建项目-应用
+cd 1907/base04/django/ ->cd 到目录
+django-admin startproject mysite4  ->创建项目
+python3 manage.py startapp bookstore ->创建应用
+
+# 分布式路由
+    1.主路由 mysite4/mysite4/urls.py 配置路由
+        url('^bookstore/',include('应用名.应用下的路由配置文件名'))     
+    ```
+       from django.conf.urls import url, include
+       from django.contrib import admin
+       urlpatterns = [
+            url(r'^admin/', admin.site.urls),
+            # http://127.0.0.1:8000/bookstore/
+            url(r'^bookstore/', include('bookstore.urls'))  #配置主路由
+        ]
+        ```            
+    2.具体应用bookstore中 手动创建一个url.py,匹配bookstore/后面的path
+    ```
+        #files bookstore/urls.py
+        from django.conf.urls import url
+        from . import views
+        urlpatterns = [          
+            #http://127.0.0.1:8000/bookstore/add_book
+            url(r'^add_book$', views.bookstore) #配置应用路由
+        ]
+        ```
+    3、具体应用bookstore中，找到views.py,编写执行函数
+     ``` 
+        from django.http import HttpResponse
+        from django.shortcuts import render
+        #files: bookstore/views.py
+        # Create your views here.
+        def bookstore(request):
+            return HttpResponse('这是首页4')
+            # return render(request, 'music/index.html')
+        ```
+    (4、)如果render返回一个.html页面，【路径为day04_note/mysite4/bookstore/templates/bookstore/add_book.html】）
+    页面标签加上：action="/bookstore/add_book"
+       eg: <form action="/bookstore/add_book" method="POST">
+
+# 启动前 setting.py配置 
+    1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
+    2.57行  TEMPLATES = [{
+            'DIRS':[os.path.join(BASE_DIR, 'templates')],        
+            }] 
+    3.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
+    4.106行 LANGUAGE_CODE = 'zh-Hans'
+    5.108行 TIME_ZONE = 'Asia/Shanghai' 
 # APP安装应用配置 33行
+        INSTALLED_APPS = [
+            ...,
+            'user',  # 用户信息模块
+           'music',  # 收藏模块
+        ]		
+# 数据库配置  80行
+    第一步：
+    #files:setting.py
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mysite3',##文件名修改
+        'USER':'root',
+        'PASSWORD':'123456',
+        'HOST':'127.0.0.1',
+        'PORT':'3306'
+    }
+}
 
-​        INSTALLED_APPS = [
-​            ...,
-​            'user',  # 用户信息模块
-​            'music',  # 收藏模块
-​        ]		
+    第二步：
 
-#### 数据库配置  80行
+    # 安装pymysql 模块
+    $ sudo pip install pymysql
+    $ mysql -uroot -p
+    $ create database mysite4 default charset utf8 collate utf8_general_ci;
+    $ show databases;
+    $ use mysite4;
+    $ show tables;
 
+    # 主文件files:__init__.py  提供pymysql引擎支持
+    import pymysql
+    pymysql.install_as_MySQLdb()
 
-		第一步：
-		#files:setting.py
-		DATABASES = {
-		'default': {
-			'ENGINE': 'django.db.backends.mysql',
-			'NAME': 'mysite3',
-			'USER':'root',
-			'PASSWORD':'123456',
-			'HOST':'127.0.0.1',
-			'PORT':'3306'
-		}
-	}
-		
-		第二步：
-	    
-	    # 安装pymysql 模块
-	    $ sudo pip install pymysql
-		$ mysql -uroot -p
-		$ create database mysite3 default charset utf8 collate utf8_general_ci;
-		$ show databases;
-		$ use mysites3;
-		$ show tables;
-	    
-		# files:__init__.py  提供pymysql引擎支持
-		import pymysql
-		pymysql.install_as_MySQLdb()
-		
-		# files:models.py
-		# Create your models here.
-		from django.db import models
-		class Bookstore(models.Model):
-			title = models.CharField("姓名",max_length=20)
-			price = models.DecimalField("定价",max_digits=5,decimal_places=2,default=0.0)
-	
-	    # DateTime=models.DateTimeField()
-	    default='2019-10-01 18:15:20'
-	    # ImageField() --用户上传头像图
-	    image=models.ImageField(
-	        upload_to="static/images")
+    # 应用files:models.py
+    # Create your models here.
+    from django.db import models
+    class Bookstore(models.Model):
+        title = models.CharField("姓名",max_length=20)
+        price = models.DecimalField("定价",max_digits=5,decimal_places=2,default=0.0)
 
-#### **每次修改完模型类都需要做以下两步迁移操作。**​	
+        #default='2019-10-01 18:15:20'
+        #DateTime=models.DateTimeField()
 
-```
-	    1.生成或更新迁移文件
-		python3 manage.py makemigrations
-	    2.执行迁移脚本程序
-		python3 manage.py migrate
-```
+        #ImageField() --用户上传头像图
+        #image=models.ImageField(
+        #upload_to="static/images")
+
+    第三步：# 每次修改完模型类都需要做以下两步迁移操作
+    ```
+        1.生成迁移文件
+        python3 manage.py makemigrations
+        
+        2.将迁移文件中的表结构同步至数据库
+        python3 manage.py migrate
+        ```
+        3.查看表
+        $ mysql -uroot -p
+        $ show databases;
+        $ use mysite4;
+        $ show tables;
+
+    第四步：# 进入django shell 添加数据
+cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
+ls    ->找到  manage.py
+python3 manage.py shell ->进入交互模式，模拟进入pymysql操作数据库
+
+from bookstore.models import Book,Author,BookStore
+
+Book.objects.create(title='python3',pub='清华大学出版社',price=20.00,market_price=25.00)
+
+Author.objects.create(name='王老师',age=18,email='wangweichao@tedu.cn')                   
+BookStore.objects.create(title='人类简史',price=26.5,desc='追溯人类的根本')
+
+mysql> select * from bookstore_bookstore;
+
+    第五步：# 启动项目
+        cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
+        ls    ->找到  manage.py
+        python3 manage.py runserver ->开启调试环境 
+
+******************************************
+                    
+# 静态文件 setting.py配置如下   文件最后一行
+1.STATIC_URL='/static/' 
+2.STATICFILES_DIRS = (
+            os.path.join(BASE_DIR, "static"),
+        )  ->服务器端静态文件的存储路径代码
+提示：页面中写静态文件url时，端口后面的路径为
+：8000/static/a.jpg
+
+html中写静态文件url
+    img src='/static/image/a.jpg'
+    {% load static %}
+    {% static 'image/a.jpg' %}
 
 # 数据库的迁移文件混乱的解决办法
 
-1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
-2. 删除 数据表
-    - sql> drop database mywebdb;
-3. 重新创建 数据表
-    - sql> create datebase mywebdb default charset...;
-4. 重新生成migrations里所有的 000?_XXXX.py
-    - python3 manage.py makemigrations
-5. 重新更新数据库
-    - python3 manage.py migrate
+    1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
+    2. 删除 数据表
+        - sql> drop database mywebdb;
+    3. 重新创建 数据表
+        - sql> create datebase mywebdb default charset...;
+    4. 重新生成migrations里所有的 000?_XXXX.py
+        - python3 manage.py makemigrations
+    5. 重新更新数据库
+        - python3 manage.py migrate
 
 *****************************************
 
