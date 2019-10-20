@@ -55,7 +55,7 @@ python3 manage.py startapp bookstore     ->创建应用
 
 ## 启动前配置
 
-### 分布式路由配置
+### 1.分布式路由配置
     1.主路由 mysite4/mysite4/urls.py 配置路由
         url('^bookstore/',include('应用名.应用下的路由配置文件名'))     
     ```
@@ -91,7 +91,7 @@ python3 manage.py startapp bookstore     ->创建应用
     页面标签加上：action="/bookstore/add_book"
        eg: <form action="/bookstore/add_book" method="POST">
 
-### setting.py配置 
+### 2.setting.py配置 
     1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
     2.57行  TEMPLATES = [{
             'DIRS':[os.path.join(BASE_DIR, 'templates')],        
@@ -99,13 +99,13 @@ python3 manage.py startapp bookstore     ->创建应用
     3.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
     4.106行 LANGUAGE_CODE = 'zh-Hans'
     5.108行 TIME_ZONE = 'Asia/Shanghai' 
-### APP配置 33行
+### 3.APP配置 33行
         INSTALLED_APPS = [
             ...,
             'user',  # 用户信息模块
            'music',  # 收藏模块
         ]		
-### 数据库配置  80行
+### 4.数据库配置  80行
     第一步：
     #files:setting.py
     DATABASES = {
@@ -182,7 +182,7 @@ mysql> select * from bookstore_bookstore;
 
 ******************************************
 
-### 静态文件配置
+### 5.静态文件配置
 
 文件最后一行
 
@@ -202,7 +202,7 @@ html中写静态文件url
     {% static 'image/a.jpg' %}
 ```
 
-### 文件混乱解决方案
+### --文件混乱解决方案
 
     1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
     2. 删除 数据表
@@ -373,7 +373,9 @@ Out[12]: <QuerySet [<Book: Book object>]>
 
 11. 详细内容参见: <https://docs.djangoproject.com/en/1.11/ref/models/querysets/#field-lookups>
 
-# 代码model
+# view层调用
+
+## urls请求分发
 
 '''
 urls.py 请求的分发入口
@@ -382,6 +384,8 @@ from django.conf.urls import url
 from django.contrib import admin
 from . import views
 
+## 加载模板
+
 '''viwes.py
 功能函数
 '''
@@ -389,7 +393,6 @@ from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render
 
-## render/loader加载模板
 ```
 def index(request):
 
@@ -397,7 +400,7 @@ def index(request):
 t=loader.get_template('test.html')
 
 # 2 t对象转化成 html字符串
-html=t.render()
+html=t.render('字典')
 
 # 3 将html return 至 浏览器
 return HttpResponse(html)
@@ -406,10 +409,13 @@ return HttpResponse(html)
     # render方案
     dic={'username': 'guoxiaonao', 'age': 18}
     return render(request, 'test.html', dic)
+    return render(request,'xxx.html',locals())
 
-## sum(range(start,stop,step,))
+### sum(range(start,stop,step,))
 
 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
+
+url(r'^sum?',views.sum_view),
 
 ```
 def  sum_view(request):
@@ -425,46 +431,61 @@ def  sum_view(request):
 ​    res=sum(range(start,stop,step,))
 ​    print('sum=',res)
 ​    return HttpResponse(res)
-url(r'^sum?',views.sum_view),
 ```
 
+### GET/POST方法  
 
+#### 请求GET -查看网页
 
-## GET方法  查看网页
+​    if request.method=='GET/POST':
+​        request.GET.get('a',默认值)
+​        request.GET.getlist('a') ->相同变量名，多个不同值
 
- http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
-
-def  page1_view(request):
-    if request.method=='GET':
-        #http://127.0.0.1:8000/page1?a=11111
-        print(request.GET.get('a')) #11111
-
-        #http://127.0.0.1:8000/page1?a=11111
-        print(request.GET.getlist('a')) #['11111', '123456', '789']
-    
-        # http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
-        print(dict(request.GET))  #  {'a': ['11111', '123456', '789'], 'b': ['654']}
-        html='<h1>这是编号为1的网页</h1>'
-    return HttpResponse(post_html)
+```
+# http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
 url(r'^page1$',views.page1_view),
+```
 
-## POST方法  提交表单或者上传文件
+    def  page1_view(request):
+        if request.method=='GET':
+            #http://127.0.0.1:8000/page1?a=11111
+            print(request.GET.get('a')) #11111
+    
+            #http://127.0.0.1:8000/page1?a=11111
+            print(request.GET.getlist('a')) #['11111', '123456', '789']
+    
+            # http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
+            print(dict(request.GET))  #  {'a': ['11111', '123456', '789'], 'b': ['654']}
+            html='<h1>这是编号为1的网页</h1>'
+            return HttpResponse(post_html)
+#### 响应POST -提交表单或者上传文件
 
 用于新资源的建立和/或已有资源的修改。
 
+```
 def  page2_view(request):
     if request.method=='POST':
         print('my post username is')
         print(request.POST.get('user name'))
+```
 
-    html='<h1>这是编号为2的网页</h1>'
-    return HttpResponse(post2_html)
+#### 请求头-Content-Type
 
-## 加载 n个 页面
+GET- 由于请求体为空 所以请求头中没有 该头
+
+POST-一定会有该头
+    1.form标签提交，使用 request.POST 取值
+    2.非表单提交    使用 request.body取请求体值
+
+### 加载 n个 页面
+
+```
+url(r'^page(\d+)', views.pagen_view),
+```
+
 def  pagen_view(request,n):
     html='<h1>==这是编号为 %s 的网页==</h1>'% n
     return HttpResponse(html)
-url(r'^page(\d+)', views.pagen_view),
 
 http://127.0.0.1:8000/100/add/200 加减乘除
 
@@ -488,26 +509,35 @@ def person_view(request,name,age):
     res="姓名"+name
     res+="年龄"+age
     return HttpResponse(res)
-## 加载用户姓名
+### 命名分组
 
-http://127.0.0.1:8000/person/xiaoming/20
+```
+# 分组 r'^page(\d+)' ->page_view(request,n)[位置传参]
+# 命名分组 r'^page(?P<name>\d+)' ->page_view(request,name)[关键字传参]
 
+# http://127.0.0.1:8000/person/xiaoming/20
 url(r'^person/(?P<name>\w+)/(?P<age>\d{1,2})',views.person_view),
+```
 
 def birthday_view(request,y,m,d):
     res="生日："+y+"年"+m+"月"+d+"日"
     return HttpResponse(res)
-## 两种生日形式
 
-http://127.0.0.1:8000/birthday/2019/12/27
+```
+# 两种生日形式
 
+# http://127.0.0.1:8000/birthday/2019/12/27
 url(r'^birthday/(?P<y>\d{4})/(?P<m>\d{1,2})/(?P<d>\d{1,2})', views.birthday_view),
 
-http://127.0.0.1:8000/birthday/12/27/2019
-
+# http://127.0.0.1:8000/birthday/12/27/2019
 url(r'^birthday/(?P<m>\d{1,2})/(?P<d>\d{1,2})/(?P<y>\d{4})',views.birthday_view),
+```
 
-## 页面传参
+## 页面调用变量
+
+view.py
+
+```
 def test_p(request):
     dic={}
     dic['lst']=['小红', '小明', '小兰']
@@ -522,43 +552,55 @@ class Dog:
         return 'hahahaha'
 def say_hi():
     return 'say hi'
+```
+
 test_p.html
-    '''
+
+​	调用{{变量名}} {{username}}
+
     lst是 {{ lst }}
     <p>lst第一个元素是 {{ lst.0 }}
     <p>lst第二个元素是 {{ lst.1 }}
     <p>lst第三个元素是 {{ lst.2 }}
-    <p>dict的 用户名是 {{ dict.username }} 年龄是 {{ dict.age|add:2}}
+    <p>dict的 用户名是 {{ dict.username }} 
+    年龄是 {{ dict.age|add:2}}  --过滤器
     <p>class_obj 调用的方式是 {{class_obj.say}}</p>
-    <p>say hi 直接调用 结果是 {{ say_hi}}</p>
+    <p>say hi 直接调用 结果是 {{ say_hi}}</p>  
 
-    <p>
-        script 结果是 {{ script|safe }}
-    </p>
-    
-    <p>
-        number 结果是 {{ number.age|add:2 }}
-    </p>
-    '''
+### if标签
 
-## if标签
+```
 def test_if(request):
     # /test_if?x=1
     x=int(request.GET.get('x', 0))
     dic={'x': x}
     return render(request, 'test_if.html', dic)
+```
+
 test_if.html
-    '''
-        {% if x > 0 %}
+
+{% if %}业务逻辑{% endif %}
+
+```
+ {% if x > 0 %}
             <h1>{{ x }}是大于0</h1>
         {% elif x == 0 %}
             <h1>{{ x }}是等于0</h1>
         {% elif x < 0 %}
             <h1>{{ x }}是小于0</h1>
         {% endif %}
-    '''
+```
 
-## form标签 计算器 
+            <h1>{{ x }}是大于0</h1>
+​        {% elif x == 0 %}
+            <h1>{{ x }}是等于0</h1>
+​        {% elif x < 0 %}
+            <h1>{{ x }}是小于0</h1>
+​        {% endif %}
+​    '''
+
+### form标签 计算器 
+```
 def cal_view(request):
     if request.method == 'GET':
         return render(request, 'cal.html')
@@ -566,65 +608,72 @@ def cal_view(request):
         # 浏览器会用form POST请求提交如下数据
         #  x=x_val & op=op_val & y=y_val
         # print(request.POST.key())
-
         # text框 空提交时 浏览器会带上具体text框的name及空值一并提交到服务器
-        # x=int(request.POST.get('x',100))
-    
-        x=request.POST.get('x')
-        if not x:
-            # 错误处理 将提示信息返给浏览器
-            error='Please give me x!!'
-            dic={'error': error}
-            return render(request, 'cal.html', dic)
-        try:
-            x=int(x)
-        except Exception as e:
-            print('--x is error--')
-            print(x)
-            try:
-                x=int(float(x))
-            except Exception as e:
-                error='The x is must be number!!'
-                dic={'error': error}
-                return render(request, 'cal.html', dic)
-    
-        # TODO 检查y值；方法同上
-    
-        op=request.POST.get('op')
-    
-        y=request.POST.get('y')
-        if not y:
-            # 错误处理 将提示信息返给浏览器
-            error='Please give me y!!'
-            dic={'error': error}
-            return render(request, 'cal.html', dic)
-        try:
-            y=int(y)
-        except Exception as e:
-            print('--y is error--')
-            print(y)
-            try:
-                y=int(float(y))
-            except Exception as e:
-                error='The y is must be number!!'
-                dic={'error': error}
-                return render(request, 'cal.html', dic)
-        result=0
-        if op == 'add':
-            result=x + y
-        elif op == 'sub':
-            result=x - y
-        elif op == 'mul':
-            result=x * y
-        else:
-            result=x / y
-        return render(request, 'cal.html', locals())
+
+x=int(request.POST.get('x',100))
+
+x=request.POST.get('x')
+if not x:
+
+# 错误处理 将提示信息返给浏览器
+
+​    error='Please give me x!!'
+​    dic={'error': error}
+​    return render(request, 'cal.html', dic)
+try:
+​    x=int(x)
+except Exception as e:
+​    print('--x is error--')
+​    print(x)
+​    try:
+​        x=int(float(x))
+​    except Exception as e:
+​        error='The x is must be number!!'
+​        dic={'error': error}
+​        return render(request, 'cal.html', dic)
+
+# TODO 检查y值；方法同上
+
+op=request.POST.get('op')
+
+y=request.POST.get('y')
+if not y:
+
+# 错误处理 将提示信息返给浏览器
+
+​    error='Please give me y!!'
+​    dic={'error': error}
+​    return render(request, 'cal.html', dic)
+try:
+​    y=int(y)
+except Exception as e:
+​    print('--y is error--')
+​    print(y)
+​    try:
+​        y=int(float(y))
+​    except Exception as e:
+​        error='The y is must be number!!'
+​        dic={'error': error}
+​        return render(request, 'cal.html', dic)
+result=0
+if op == 'add':
+​    result=x + y
+elif op == 'sub':
+​    result=x - y
+elif op == 'mul':
+​    result=x * y
+else:
+​    result=x / y
+return render(request, 'cal.html', locals())
+```
+
 test_cal.html
-    '''
-    {% if error %}
-    错误提示：{{ error }}
-    {% endif %}
-    <form action='/cal' method='POST'>
+
+        {% if error %}
+        错误提示：{{ error }}
+        {% endif %}
+        
+        <form action='/cal' method='POST'>
                 <input type='text' name="x" value="{{ x }}">
                 <select name='op'>
                     <option value="add" {% if op == 'add' %}selected{% endif %}> +加 </option>
@@ -636,30 +685,33 @@ test_cal.html
                 <div>
                     <input type="submit" value='开始计算'>
                 <div>
-            </form>
-            '''
-    
-## for标签
+            </form>    
+### for标签
+```
 def test_for(request):
     lst=['小红', '小兰', '小绿']
     dic={'username': '小脑', 'age': 18}
     return render(request, 'test_for.html', locals())
+```
+
 test_for.html
-    '''
-        {% for i in lst %}
-        <!--<p> {{forloop.counter}} {{ i }}</p> #正向遍历-->
-        <p> {{forloop.revcounter}} {{ i }}</p> --反向遍历
-        {% if forloop.first %} ===
-        {% elif forloop.last %} %%%
-        {% endif %}
-        <br>
 
-        {% empty %}
-        <p>对不起，当前没有数据</p>
-        {% endfor %}
-    '''
+    {% for i in lst %}
+    
+    <p> {{forloop.counter}} {{ i }}</p> #正向遍历
+    <p> {{forloop.revcounter}} {{ i }}</p> #反向遍历
+    
+    {% if forloop.first %} ===
+    {% elif forloop.last %} ===
+    {% endif %}
+    
+    {% empty %}
+    <p>对不起，当前没有数据</p>
+    
+    {% endfor %}
+### 页面继承
 
-## 页面继承
+```
 def base_view(request):
     lst=['哈哈', '嘿嘿']
     return render(request, 'base.html', locals())
@@ -667,57 +719,29 @@ def music_view(request):
     return render(request, 'music.html')
 def sports_view(request):
     return render(request, 'sports.html')
+```
 
-2.项目名-文件夹->setting.py urls.py wsgi.py  
-3.url.py->
-    urlpatterns=[
-        #url http://127.0.0.1:8000/sum?start=1&stop=101&step=1
-        url(r'xxxxxx',viewes),
-    ]  
-    * 分组 
-        r'^page(\d+)' ->page_view(request,n)[位置传参]
-    *命名分组
-        r'^page(?P<name>\d+)' ->page_view(request,name)[关键字传参]
-4.视图函数 -> 项目同名目录下创建views.py ->
-    def xxx_view(request,xx):
-        try:
-            a=1
-        except Excetiom as e :
-            print(e)
-        return HttpResponse/HttpResponseRedirect
-    
-     响应头
-        Content-Type - text/html;charset=utf-8
-        Location -302    
-5.请求GET 与 响应POST
-    if request.method=='GET/POST':
-        request.GET.get('a',默认值)
-        request.GET.getlist('a') ->相同变量名，多个不同值
-    请求头-Content-Type
-        .GET- 由于请求体为空 所以请求头中没有 该头
-        .POST-一定会有该头
-            1.form标签提交，使用 request.POST 取值
-            2.非表单提交    使用 request.body取请求体值
-6.设计模式 MVC+MTV
-7.模板： 
-    第一步：配置setting.py  DIRS=[os.path.join(BASE_DIR,'templates')]  #当前项目HTML存储位置
-    第二步：view层调用
-        1.t=loader.get_template('模板文件名'）
-            html=t.render('字典')
-            return HttpResponse(html)
-        2.from django.shortcuts import render
-               dic={'username':'guoxiaonao'}
-               return render(request,'xxx.html',dic)
-               return render(request,'xxx.html',locals())
-        3.调用{{变量名}} {{username}}
-        4.{% 标签 %} - 流程控制 if for
-            {% if %}业务逻辑{% endif %}
-        5.过滤器 {{ 变量|过滤器：参数名 }}
-        6.模板继承
-            父模板 {% block 块名 %}xxx{% endblock %}
-            子模板 
-                {% extends 'base.html' %}
-                子模板 重写父模板中的内容块
-                {% block block_name %}
-                子模板块用来覆盖父模板中 block_name 块的内容
-                {% endblock block_name %}                 
+### 过滤器
+
+ {{ 变量|过滤器：参数名 }}
+
+<p>
+script 结果是 {{ script|safe }}
+</p>
+
+<p>
+    number 结果是 {{ number.age|add:2 }}
+</p>   
+
+### 模板继承
+
+​    1.父模板 {% block 块名 %}xxx{% endblock %}
+
+​    2.子模板 
+​        {% extends 'base.html' %}
+
+​        子模板 重写父模板中的内容块
+​        {% block block_name %}
+​                    。。。--子模板块用来覆盖父模板中 block_name 块的内容
+
+​        {% endblock block_name %} 
