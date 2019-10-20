@@ -1,99 +1,61 @@
-# 启动项目
-cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
-ls    ->找到  manage.py
-python3 manage.py runserver ->开启调试环境 
+# django安装
 
-# 每次修改完模型类都需要做以下两步迁移操作
+确认当前环境Django 
+pip3 freeze|grep 'Django'
+-->Django==1.11.8
+
+如果版本号不是1.11.8，执行如下操作：
+pip3 uninstall Django
+pip3 install Django==1.11.8
+
+笔记本
+pip3 install celery
+确认当前环境Django 
+pip3 freeze|grep 'Django'
+
+celery分布式任务队列
+文档：http://docs.jinkan.org/docs/celery/
+检测 版本:
+pip3 freeze|grep 'celery'
+安装celery:
+sudo pip3 install celery
+
+安装成功后检测 版本:
+tarena@tarena:~$ pip3 freeze|grep 'celery'
+celery==4.3.0
+tarena@tarena:~$ pip3 freeze|grep 'Django'
+Django==1.11.8
+tarena@tarena:~$ 
+
+如果版本不对 请执行 卸载+指定版本安装 ex:
+卸载 -> sudo pip3 uninstall Django
+指定版本安装-> sudo pip3 install Django==1.11.8
+
+安装中途 出现红字报错， 请先翻译一下，大概率是 权限+网络不太好
+
+# 模型类迁移2步操作
+
+python3 manage.py makemigrations ->生成迁移文件
+
 python3 manage.py makemigrations ->生成迁移文件
 python3 manage.py migrate ->将迁移文件中的表结构同步至数据库
 
-3.查看表
+查看表
 $ mysql -uroot -p
 $ show databases;
 $ use mysite4;
 $ show tables;
 
-python3 manage.py shell ->进入交互模式，模拟进入pymysql操作数据库
+# 创建应用app流程
 
-from bookstore.models import Book,Author,BookStore
+## 创建项目-应用
+cd 1907/base04/django/   ->cd 到目录
+django-admin startproject mysite4   ->创建项目
+python3 manage.py startapp bookstore     ->创建应用
 
-mysql> select * from bookstore_bookstore;
+## 启动前配置
 
-#4.数据库查询
-```
-    # files:bookstore.models.py 设置
-    class Book(models.Model):
-        def __str__(self):
-            return '<%s>' % (self.title)
-    ``` 
-##查询实体中所有的数据
-all_res=Book.objects.all()
-for book in all_res:
-    print(book.title)
-##取values ，返回字典
-Book.objects.values("title", "pub")
-all_values=Book.objects.values("title", "pub")
-for book in all_values:
-   print(book['title'])
-
-##取values ，返回元组
-all_list=Book.objects.values_list("title", "pub")
-for book in all_list:
-    print("book=", book)
-
-## 降序排列
-all_p=Book.objects.order_by("-price")
-for book in all_p:
-    print("书名:", book.title, '定价:', book.price)
-
-## get
-try:
-except
-Book.objects.get(pub='')
-    
-## 数组等值查询
-In [11]: all_q=Book.objects.filter(pub='清华大学出版社',title='python3')
-In [12]: all_q
-Out[12]: <QuerySet [<Book: Book object>]>
-
-1. 查询Book表中price大于等于50的信息
-Book.objects.filter(price__gte=50)
-
-2. 查询Author表中姓王的人的信息
-
-Author.objects.filter(name__startswith='王')
-
-3. 查询Author表中Email中包含"wc"的人的信息
-Author.objects.filter(email__in=['wc'])  
-
-4.批量修改：shell操作
-eg：修改'清华大学出版社'图书的零售价均为40
-update_books = Book.objects.filter(pub='清华大学出版社')
-update_books.update(market_price=40)
-
-5.删除
-def delete_book(request,book_id):
-    try:
-        book=Book.objects.get(id=book_id)
-        book.delete()
-    except:
-        return HttpResponse('您提交的数据有误，请刷新重试')
-    return HttpResponseRedirect('/bookstore/all_book')
-
-5.1批量删除
-In [8]: delete_books = Book.objects.filter(pub='清华大学出版社')
-In [9]: delete_books.delete()
-
-    
-    
-    
-# 执行应用流程
-# 创建项目-应用
-cd 1907/base04/django/ ->cd 到目录
-django-admin startproject mysite4  ->创建项目
-python3 manage.py startapp bookstore ->创建应用
-
-# 分布式路由
+### 分布式路由配置
     1.主路由 mysite4/mysite4/urls.py 配置路由
         url('^bookstore/',include('应用名.应用下的路由配置文件名'))     
     ```
@@ -129,7 +91,7 @@ python3 manage.py startapp bookstore ->创建应用
     页面标签加上：action="/bookstore/add_book"
        eg: <form action="/bookstore/add_book" method="POST">
 
-# 启动前 setting.py配置 
+### setting.py配置 
     1.46行 注释 # 'django.middleware.csrf.CsrfViewMiddleware',
     2.57行  TEMPLATES = [{
             'DIRS':[os.path.join(BASE_DIR, 'templates')],        
@@ -137,13 +99,13 @@ python3 manage.py startapp bookstore ->创建应用
     3.manage.py同级新建名为  templates 的 Python package 用来存放 html文件  
     4.106行 LANGUAGE_CODE = 'zh-Hans'
     5.108行 TIME_ZONE = 'Asia/Shanghai' 
-# APP安装应用配置 33行
+### APP配置 33行
         INSTALLED_APPS = [
             ...,
             'user',  # 用户信息模块
            'music',  # 收藏模块
         ]		
-# 数据库配置  80行
+### 数据库配置  80行
     第一步：
     #files:setting.py
     DATABASES = {
@@ -158,7 +120,7 @@ python3 manage.py startapp bookstore ->创建应用
 }
 
     第二步：
-
+    
     # 安装pymysql 模块
     $ sudo pip install pymysql
     $ mysql -uroot -p
@@ -166,25 +128,25 @@ python3 manage.py startapp bookstore ->创建应用
     $ show databases;
     $ use mysite4;
     $ show tables;
-
+    
     # 主文件files:__init__.py  提供pymysql引擎支持
     import pymysql
     pymysql.install_as_MySQLdb()
-
+    
     # 应用files:models.py
     # Create your models here.
     from django.db import models
     class Bookstore(models.Model):
         title = models.CharField("姓名",max_length=20)
         price = models.DecimalField("定价",max_digits=5,decimal_places=2,default=0.0)
-
+    
         #default='2019-10-01 18:15:20'
         #DateTime=models.DateTimeField()
-
+    
         #ImageField() --用户上传头像图
         #image=models.ImageField(
         #upload_to="static/images")
-
+    
     第三步：# 每次修改完模型类都需要做以下两步迁移操作
     ```
         1.生成迁移文件
@@ -198,7 +160,7 @@ python3 manage.py startapp bookstore ->创建应用
         $ show databases;
         $ use mysite4;
         $ show tables;
-
+    
     第四步：# 进入django shell 添加数据
 cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
 ls    ->找到  manage.py
@@ -219,21 +181,28 @@ mysql> select * from bookstore_bookstore;
         python3 manage.py runserver ->开启调试环境 
 
 ******************************************
-                    
-# 静态文件 setting.py配置如下   文件最后一行
+
+### 静态文件配置
+
+文件最后一行
+
 1.STATIC_URL='/static/' 
 2.STATICFILES_DIRS = (
             os.path.join(BASE_DIR, "static"),
         )  ->服务器端静态文件的存储路径代码
+
 提示：页面中写静态文件url时，端口后面的路径为
 ：8000/static/a.jpg
 
 html中写静态文件url
+
+```
     img src='/static/image/a.jpg'
     {% load static %}
     {% static 'image/a.jpg' %}
+```
 
-# 数据库的迁移文件混乱的解决办法
+### 文件混乱解决方案
 
     1. 删除 所有 migrations 里所有的 000?_XXXX.py (`__init__.py`除外)
     2. 删除 数据表
@@ -245,9 +214,166 @@ html中写静态文件url
     5. 重新更新数据库
         - python3 manage.py migrate
 
-*****************************************
+## 启动项目
 
-五、代码编写
+cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
+ls    ->找到  manage.py
+python3 manage.py runserver ->开启调试环境 
+
+# shell模式操作数据库
+
+## 进入交互模式
+
+1.在models模型类中定义 `def __str__(self): ` 方法可以将自定义默认的字符串
+
+```
+# files:bookstore.models.py 
+
+    class Book(models.Model):
+        def __str__(self):
+            return '<%s>' % (self.title)
+```
+
+2.模拟进入pymysql操作数据库
+
+```
+mysql -uroot -p123456
+
+mysql> select * from bookstore_bookstore;
+
+
+python3 manage.py shell
+
+In [1]: from bookstore.models import Book,Author,BookStore
+```
+
+## 查询实例：
+
+1.查询Book表中price大于等于50的信息
+Book.objects.filter(price__gte=50)
+
+2.查询Author表中姓王的人的信息
+
+Author.objects.filter(name__startswith='王')
+
+3.查询Author表中Email中包含"wc"的人的信息
+Author.objects.filter(email__in=['wc']) 
+
+4.批量修改
+eg：修改'清华大学出版社'图书的零售价均为40
+update_books = Book.objects.filter(pub='清华大学出版社')
+update_books.update(market_price=40)
+
+5.删除
+def delete_book(request,book_id):
+    try:
+        book=Book.objects.get(id=book_id)
+        book.delete()
+    except:
+        return HttpResponse('您提交的数据有误，请刷新重试')
+    return HttpResponseRedirect('/bookstore/all_book')
+
+5.1批量删除
+In [8]: delete_books = Book.objects.filter(pub='清华大学出版社')
+In [9]: delete_books.delete()
+
+## 查询所有数据
+
+all_res=Book.objects.all()
+for book in all_res:
+    print(book.title)
+
+## 取values ，字典
+
+Book.objects.values("title", "pub")
+all_values=Book.objects.values("title", "pub")
+for book in all_values:
+   print(book['title'])
+
+## 取values，元组
+
+all_list=Book.objects.values_list("title", "pub")
+for book in all_list:
+    print("book=", book)
+
+## 降序排列
+
+all_p=Book.objects.order_by("-price")
+for book in all_p:
+	print("书名:", book.title, '定价:', book.price)
+
+## get
+
+try:
+except
+Book.objects.get(pub='')
+
+## filter条件查询
+
+In [11]: all_q=Book.objects.filter(pub='清华大学出版社',title='python3')
+In [12]: all_q
+Out[12]: <QuerySet [<Book: Book object>]>
+
+## 查询谓词
+
+- 每一个查询谓词是一个独立的查询功能
+
+1. `__exact` : 等值匹配
+
+   ```python
+   Author.objects.filter(id__exact=1)
+   # 等同于select * from author where id = 1
+   
+   ```
+
+2. `__contains` : 包含指定值
+
+   ```python
+   Author.objects.filter(name__contains='w')
+   # 等同于 select * from author where name like '%w%'
+   
+   ```
+
+3. `__startswith` : 以 XXX 开始
+
+4. `__endswith` : 以 XXX 开始
+
+5. `__gt` : 大于指定值
+
+   ```python
+   Author.objects.filer(age__gt=50)
+   # 等同于 select * from author where age > 50
+   
+   ```
+
+6. `__gte` : 大于等于
+
+7. `__lt` : 小于
+
+8. `__lte` : 小于等于
+
+9. `__in` : 查找数据是否在指定范围内
+
+   - 示例
+
+   ```python
+   Author.objects.filter(country__in=['中国','日本','韩国'])
+   # 等同于 select * from author where country in ('中国','日本','韩国')
+   
+   ```
+
+10. `__range`: 查找数据是否在指定的区间范围内
+
+    ```python
+    # 查找年龄在某一区间内的所有作者
+    Author.objects.filter(age__range=(35,50))
+    # 等同于 SELECT ... WHERE Author BETWEEN 35 and 50;
+    
+    ```
+
+11. 详细内容参见: <https://docs.djangoproject.com/en/1.11/ref/models/querysets/#field-lookups>
+
+# 代码model
 
 '''
 urls.py 请求的分发入口
@@ -263,7 +389,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render
 
-# render/loader加载模板
+## render/loader加载模板
 ```
 def index(request):
 
@@ -281,7 +407,7 @@ return HttpResponse(html)
     dic={'username': 'guoxiaonao', 'age': 18}
     return render(request, 'test.html', dic)
 
-# sum(range(start,stop,step,))
+## sum(range(start,stop,step,))
 
 输入网址: http://127.0.0.1:8000/sum?start=1&stop=101&step=1
 
@@ -304,7 +430,7 @@ url(r'^sum?',views.sum_view),
 
 
 
-# GET方法  查看网页
+## GET方法  查看网页
 
  http://127.0.0.1:8000/page1?a=11111&a=123456&a=789&b=654
 
@@ -322,7 +448,7 @@ def  page1_view(request):
     return HttpResponse(post_html)
 url(r'^page1$',views.page1_view),
 
-# POST方法  提交表单或者上传文件
+## POST方法  提交表单或者上传文件
 
 用于新资源的建立和/或已有资源的修改。
 
@@ -334,7 +460,7 @@ def  page2_view(request):
     html='<h1>这是编号为2的网页</h1>'
     return HttpResponse(post2_html)
 
-# 加载 n个 页面
+## 加载 n个 页面
 def  pagen_view(request,n):
     html='<h1>==这是编号为 %s 的网页==</h1>'% n
     return HttpResponse(html)
@@ -362,7 +488,7 @@ def person_view(request,name,age):
     res="姓名"+name
     res+="年龄"+age
     return HttpResponse(res)
-# 加载用户姓名
+## 加载用户姓名
 
 http://127.0.0.1:8000/person/xiaoming/20
 
@@ -371,7 +497,7 @@ url(r'^person/(?P<name>\w+)/(?P<age>\d{1,2})',views.person_view),
 def birthday_view(request,y,m,d):
     res="生日："+y+"年"+m+"月"+d+"日"
     return HttpResponse(res)
-# 两种生日形式
+## 两种生日形式
 
 http://127.0.0.1:8000/birthday/2019/12/27
 
@@ -381,7 +507,7 @@ http://127.0.0.1:8000/birthday/12/27/2019
 
 url(r'^birthday/(?P<m>\d{1,2})/(?P<d>\d{1,2})/(?P<y>\d{4})',views.birthday_view),
 
-# 页面传参
+## 页面传参
 def test_p(request):
     dic={}
     dic['lst']=['小红', '小明', '小兰']
@@ -415,7 +541,7 @@ test_p.html
     </p>
     '''
 
-# if标签
+## if标签
 def test_if(request):
     # /test_if?x=1
     x=int(request.GET.get('x', 0))
@@ -432,7 +558,7 @@ test_if.html
         {% endif %}
     '''
 
-# form标签 计算器 
+## form标签 计算器 
 def cal_view(request):
     if request.method == 'GET':
         return render(request, 'cal.html')
@@ -513,7 +639,7 @@ test_cal.html
             </form>
             '''
     
-# for标签
+## for标签
 def test_for(request):
     lst=['小红', '小兰', '小绿']
     dic={'username': '小脑', 'age': 18}
@@ -533,7 +659,7 @@ test_for.html
         {% endfor %}
     '''
 
-# 页面继承
+## 页面继承
 def base_view(request):
     lst=['哈哈', '嘿嘿']
     return render(request, 'base.html', locals())

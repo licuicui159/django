@@ -203,7 +203,21 @@ if  request.method == 'GET'/'POST':
     - Django 1.11.x 支持 Python 2.7, 3.4, 3.5 和 3.6（长期支持版本 LTS)
     - 注: Django 1.11.x 不支持 Python 3.7
 
+### django安装提示
 
+```shell
+1,安装celery sudo pip3 install celery
+2,安装成功后检查 版本
+	1，Django    pip3 freeze|grep 'Django'   1.11.8
+    2，celery    pip3 freeze|grep 'celery'   4.3.0
+
+	如果版本不对，请执行 卸载 + 指定版本安装  ex:
+	卸载 ->  sudo pip3 uninstall Django
+	指定版本安装 ->  sudo pip3 install Django==1.11.8
+
+ps: 安装中途 出现红字报错， 请先翻译一下，大概率是 限+网络不太好
+
+```
 
 ## Django框架开发
 ### 创建项目的指令
