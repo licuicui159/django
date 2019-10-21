@@ -1,10 +1,34 @@
-# 多对多模型
+# 创建项目-应用
+
+## 基本命令
+
+->cd 到目录
+
+cd 1907/base04/django/day04_note/mysite4 
+->找到  manage.py
+
+ls    
+
+->创建项目 
+django-admin startproject mysite4   
+->创建应用
+
+python3 manage.py startapp otm   
+
+->模型类迁移2步操作
+
+python3 manage.py makemigrations ->生成迁移文件
+python3 manage.py migrate ->将迁移文件中的表结构同步至数据库
+
+->开启调试环境   
+
+python3 manage.py runserver 
+
+## 步骤
 
 1.创建应用 mtm
 
 python3 manage.py startapp mtm
-
-
 
 2.python-files  :  mtm/models.py
 
@@ -37,13 +61,6 @@ $ mysql -uroot -p
 $ show databases;
 $ use mysite4;
 $ show tables;
-
-# 创建应用app流程
-
-## 创建项目-应用
-cd 1907/base04/django/   ->cd 到目录
-django-admin startproject mysite4   ->创建项目
-python3 manage.py startapp otm     ->创建应用
 
 ## 启动前配置
 
@@ -81,7 +98,9 @@ INSTALLED_APPS = [
 ### 数据库配置  80行
 第一步：
 #files:setting.py
-DATABASES = {
+
+#### DATABASES = {
+
 'default': {
     'ENGINE': 'django.db.backends.mysql',
     'NAME': 'mysite3',##文件名修改
@@ -93,7 +112,9 @@ DATABASES = {
 
 第二步：
 
-主文件files:__init__.py  提供pymysql引擎支持
+#### 主文件files:__init__.py
+
+提供pymysql引擎支持
 
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -148,7 +169,8 @@ BookStore.objects.create(title='人类简史',price=26.5,desc='追溯人类的�
 
 mysql> select * from bookstore_bookstore;
 
-第七步：# 启动项目
+# 启动项目
+
 cd 1907/base04/django/day04_note/mysite4 ->cd 到目录
 ls    ->找到  manage.py
 python3 manage.py runserver ->开启调试环境 
@@ -188,7 +210,7 @@ html中写静态文件url
         # http://127.0.0.1:8000/bookstore/
         url(r'^bookstore/', include('bookstore.urls'))  #配置主路由
     ]
-    ```            
+```
 2.具体应用bookstore中 手动创建一个url.py,匹配bookstore/后面的path
 ​```
     #files bookstore/urls.py
@@ -208,7 +230,7 @@ html中写静态文件url
     def bookstore(request):
         return HttpResponse('这是首页4')
         # return render(request, 'music/index.html')
-    ```
+ ```
 (4、)如果render返回一个.html页面，【路径为day04_note/mysite4/bookstore/templates/bookstore/add_book.html】）
 页面标签加上：action="/bookstore/add_book"
    eg: <form action="/bookstore/add_book" method="POST">
@@ -336,7 +358,7 @@ Out[12]: <QuerySet [<Book: Book object>]>
    Author.objects.filter(id__exact=1)
    # 等同于select * from author where id = 1
    
-   ```
+```
 
 2. `__contains` : 包含指定值
 
