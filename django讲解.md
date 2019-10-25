@@ -1,4 +1,134 @@
-#  《Django Web框架笔记》
+# 面试必杀技
+
+## QuerySet.query
+
+print(QuerySet.query) 可查看当前orm语句具体执行的SQL语句
+
+## 查看日志
+
+1.开启日志监控
+
+mysql> show variables like 'general%';
+
+mysql> set global general_log = 'ON';
+
+mysql> show variables like 'general%';   #确定状态为ON时，general_log_file 值对应的 文件地址中 /var/lib/mysql/tarena.log 可查看 所有发到mysql的语句
+
+2.如果是ON，新终端查看日志
+
+tarena@tarena:~$ sudo su
+
+root# tail -f /var/lib/mysql/tarena.log 
+
+3.进入shell可进行orm语句测试
+
+注意：objects.xxx命令为惰性取值，只有在调用的时候，才发出sql语句
+
+​	s = book.objects.all()
+
+​	s[0]切片/索引时，会调用sql语句
+
+​	迭代s的时候，会调用sql语句
+
+​	print(s)会调用sql语句
+
+特别注意，每次执行QuerySet[0]则都进行sql语句调用，所以每次执行均是一个新对象
+
+建议使用具体对象进行 更新时，执行右侧->obj = QuerySet[0]
+
+4.必须关闭，否则容易撑爆磁盘
+
+mysql> set global general_log = 'OFF';
+
+mysql> show variables like 'general%'; 
+
+
+
+
+
+## 哈希三大特点
+
+定长输出【无论输入多长，输出都是定长】、雪崩【一变则巨变】、不可逆【无法反算回明文】
+
+自行处理密码存储策略
+1.当用户注册时，将用户传递过来的明文密码进行 如 md5,sha系列的哈希算法【散列】；
+ pw=request.POST.get('password')
+ pw += 'salt'
+ import hashlib
+ m5 = hashlib.md5()
+ m5.update(pw.encode())
+ pw_md5 = md5.hexdigest()
+
+2.当用户登录时
+
+用户登录时填写的密码
+
+pw = request.POST.get('password')
+pw += 'salt'
+import hashlib
+m5 = hashlib.md5()
+m5.update(pw.encode())
+pw_md5 = md5.hexdigest()
+
+user = User.objects.get(username=username)
+if user.password != pw_md5：
+	return '用户名或密码错误'
+
+## 缓存总结
+
+​	1.后端缓存
+
+​		我们将复制视图函数处理结果放到其他存储介质中，当用户下次访问该视图函数时，可跳过视图函数直接将结果从存储介质中获取并返回给用户。
+
+ 2. 浏览器缓存
+
+    每次浏览器发出请求时【浏览器地址栏回车/摁钮/超链接-get】,浏览器优先检查是自己浏览器内部的缓存区域是否有数据，
+
+    ​	1.如果没有强缓存，浏览器发出HTTP请求至服务器端
+
+    ​	2.协商缓存 - 【Last_Modified/Etag】，原来有强缓存-但是此次请求检查时，缓存过期：
+
+​				尝试协商缓存的结果：
+
+​					1.Last_Modifide
+
+​							把上次缓存响应头中的Last_Modifide的值赋值给if-Modifide-Since请求头，发送至服务器，如果服务器端对比当前响应的Modifide和请求头中一致，则返回304且响应体为空；否则返回200，响应全新数据
+
+```
+304：代表当前缓存能用，您再使用一阵子，响应体为空
+
+200：缓存的确过期了，响应中携带最新数据
+```
+
+​					2.Etag  
+
+​							把上次缓存响应头中的Etag的值赋值给if-None-Match请求头，剩余步骤同上
+
+3.csrf 跨站伪造攻击
+
+​	1.攻击原理：老王看直播【每天，高频次】
+
+​	2.Django如何防范：
+
+​		1.一定要确定是否开启csrf中间件
+
+​		2.模板表单中添加新标签
+
+```
+form标签内{% csrf_token %}
+```
+
+​		3.cookies里面 暗号1，表单里面 暗号2 ，服务器端效验暗号1 == 暗号2 ！如果成立，则效验通过，否则 怀疑是 csrf 攻击
+
+## 获取客户端ip,路由
+
+- request.META['REMOTE_ADDR'] 可以得到远程客户端的IP地址
+- request.path_info 可以得到客户端访问的GET请求路由信息
+
+## CentOS 7x
+
+#  Django Web框架笔记
+
 ### 目录
 [TOC]
 
@@ -7,8 +137,6 @@
     2. 文件较多易混淆
     3. 学习阶段注重框架使用，工作阶段注重实现业务逻辑
     4. 综合应用强，小练习少
-
-
 
 ### 要点1
 
@@ -1556,7 +1684,7 @@ TEMPLATES = [
         无返回值,保存成功后,obj会被重新赋值
         ```
 
-### Django shell 的使用
+### shell 操作
 - 在Django提供了一个交互式的操作项目叫 `Django Shell` 它能够在交互模式用项目工程的代码执行相应的操作
 - 利用 Django Shell 可以代替编写View的代码来进行直接操作
 - 在Django Shell 下只能进行简单的操作，不能运行远程调式
@@ -1632,7 +1760,8 @@ TEMPLATES = [
          print("书名", book.title, '出版社:', book.pub)
      ```
 
-2. 在模型类中定义 `def __str__(self): ` 方法可以将自定义默认的字符串
+2. 在模型类中定义 `def __str__(self): ` 方法可以将
+### 自定义默认字符串
 
    ```python
    class Book(models.Model):
@@ -1712,7 +1841,9 @@ TEMPLATES = [
      print("书名:", book.title, '定价:', book.price)
      ```
 
-6. 根据条件查询多条记录
+### filter(条件)查询
+
+   根据条件查询多条记录
 
    - 方法: filter(条件)
 
@@ -1973,103 +2104,103 @@ TEMPLATES = [
 
 - 聚合查询是指对一个数据表中的一个字段的数据进行部分或全部进行统计查询,查bookstore_book数据表中的全部书的平均价格，查询所有书的总个数等,都要使用聚合查询
 
-1. 不带分组聚合
+#### 不带分组
 
-   - 不带分组的聚合查询是指导将全部数据进行集中统计查询
+- 不带分组的聚合查询是指导将全部数据进行集中统计查询
 
-   - 聚合函数:
+- 聚合函数:
 
-     - 定义模块: `django.db.models`
-     - 用法: `from django.db.models import *`
-     - 聚合函数: 
-       - Sum, Avg, Count, Max, Min
+  - 定义模块: `django.db.models`
+  - 用法: `from django.db.models import *`
+  - 聚合函数: 
+    - Sum, Avg, Count, Max, Min
 
-   - 语法: 
+- 语法: 
 
-     - MyModel.objects.aggregate(结果变量名=聚合函数('列'))
+  - MyModel.objects.aggregate(结果变量名=聚合函数('列'))
 
-   - 返回结果:
+- 返回结果:
 
-     - 由 结果变量名和值组成的字典
-     - 格式为:
-       - `{"结果变量名": 值}
+  - 由 结果变量名和值组成的字典
+  - 格式为:
+    - `{"结果变量名": 值}
 
-   - 示例:
+- 示例:
 
-     ```python
-     # 得到所有书的平均价格
-     from bookstore import models
+  ```python
+  # 得到所有书的平均价格
+  from bookstore import models
+  from django.db.models import Count
+  result = models.Book.objects.aggregate(myAvg=Avg('price'))
+  print("平均价格是:", result['myAvg'])
+  print("result=", result)  # {"myAvg": 58.2}
+  
+  # 得到数据表里有多少本书
+  from django.db.models import Count
+  result = models.Book.objects.aggregate(mycnt=Count('title'))
+  print("数据记录总个数是:", result['mycnt'])
+  print("result=", result)  # {"mycnt": 10}
+  
+  
+  ```
+
+#### 分组聚合
+
+- 分组聚合是指通过计算查询结果中每一个对象所关联的对象集合，从而得出总计值(也可以是平均值或总和)，即为查询集的每一项生成聚合。
+
+- 语法: 
+
+  - QuerySet.annotate(结果变量名=聚合函数('列'))
+
+- 用法步骤:
+
+  1. 通过先用查询结果MyModel.objects.value. 查找查询要分组聚合的列
+
+     - MyModel.objects.value('列1', '列2')
+
+     - 如: 
+
+       ```python
+       pub_set = models.Book.objects.values('pub')
+       print(books)  # <QuerySet [{'pub': '清华大学出版社'}, {'pub': '清华大学出版社'}, {'pub_hou {'pub': '机械工业出版社'}, {'pub': '清华大学出版社'}]>
+       
+       
+       ```
+
+  2. 通过返回结果的 QuerySet.annotate 方法分组聚合得到分组结果
+
+     - QuerySet.annotate(名=聚合函数('列'))
+
+     - 返回 QuerySet 结果集,内部存储结果的字典
+
+     - 如:
+
+       ```python
+       pub_count_set = pub_set.annotate(myCount=Count('pub'))
+       print(pub_count_set)  # <QuerySet [{'pub': '清华大学出版社', 'myCount': 7}, {'pub': '机械工业出版社', 'myCount': 3}]>
+       
+       ```
+
+  - .values('查询列名')
+
+- 示例:
+
+  - 得到哪儿个出版社共出版多少本书
+
+  ```python
+  def test_annotate(request):
      from django.db.models import Count
-     result = models.Book.objects.aggregate(myAvg=Avg('price'))
-     print("平均价格是:", result['myAvg'])
-     print("result=", result)  # {"myAvg": 58.2}
-     
-     # 得到数据表里有多少本书
-     from django.db.models import Count
-     result = models.Book.objects.aggregate(mycnt=Count('title'))
-     print("数据记录总个数是:", result['mycnt'])
-     print("result=", result)  # {"mycnt": 10}
-     
-     
-     ```
-
-2. 分组聚合
-
-   - 分组聚合是指通过计算查询结果中每一个对象所关联的对象集合，从而得出总计值(也可以是平均值或总和)，即为查询集的每一项生成聚合。
-
-   - 语法: 
-
-     - QuerySet.annotate(结果变量名=聚合函数('列'))
-
-   - 用法步骤:
-
-     1. 通过先用查询结果MyModel.objects.value. 查找查询要分组聚合的列
-
-        - MyModel.objects.value('列1', '列2')
-
-        - 如: 
-
-          ```python
-          pub_set = models.Book.objects.values('pub')
-          print(books)  # <QuerySet [{'pub': '清华大学出版社'}, {'pub': '清华大学出版社'}, {'pub_hou {'pub': '机械工业出版社'}, {'pub': '清华大学出版社'}]>
-          
-          
-          ```
-
-     2. 通过返回结果的 QuerySet.annotate 方法分组聚合得到分组结果
-
-        - QuerySet.annotate(名=聚合函数('列'))
-
-        - 返回 QuerySet 结果集,内部存储结果的字典
-
-        - 如:
-
-          ```python
-          pub_count_set = pub_set.annotate(myCount=Count('pub'))
-          print(pub_count_set)  # <QuerySet [{'pub': '清华大学出版社', 'myCount': 7}, {'pub': '机械工业出版社', 'myCount': 3}]>
-          
-          ```
-
-     - .values('查询列名')
-
-   - 示例:
-
-     - 得到哪儿个出版社共出版多少本书
-
-     ```python
-     def test_annotate(request):
-        from django.db.models import Count
-        from . import models
-     
-         # 得到所有出版社的查询集合QuerySet
-         pub_set = models.Book.objects.values('pub')
-         # 根据出版社查询分组，出版社和Count的分组聚合查询集合
-         pub_count_set = pub_set.annotate(myCount=Count('pub'))  # 返回查询集合
-         for item in pub_count_set:
-             print("出版社:", item['pub'], "图书有：", item['myCount'])
-         return HttpResponse('请查看服务器端控制台获取结果')
-     
-     ```
+     from . import models
+  
+      # 得到所有出版社的查询集合QuerySet
+      pub_set = models.Book.objects.values('pub')
+      # 根据出版社查询分组，出版社和Count的分组聚合查询集合
+      pub_count_set = pub_set.annotate(myCount=Count('pub'))  # 返回查询集合
+      for item in pub_count_set:
+          print("出版社:", item['pub'], "图书有：", item['myCount'])
+      return HttpResponse('请查看服务器端控制台获取结果')
+  
+  ```
 
 ### F对象
 
@@ -2303,7 +2434,7 @@ for book in books:
     admin.site.register(models.Book)  # 将Book类注册为可管理页面
     ```
 
-### 修改后台Models的展现形式
+### 后台Models的展现形式
 
 - 在admin后台管理数据库中对自定义的数据记录都展示为 `XXXX object` 类型的记录，不便于阅读和判断
 
@@ -2409,13 +2540,46 @@ for book in books:
 
 - 练习:
   - 将Book模型类 和 Author 模型类都加入后台管理
+  
   - 制作一个AuthorManager管理器类，让后台管理Authors列表中显示作者的ID、姓名、年龄信息
-  - 用后台管理程序 添加三条 Author 记录
-  - 修改其中一条记录的年龄 - Author
-  - 删除最后一条添加的记录 - Author
+  
+    files:admin.py里添加管理类
+  
+    ```
+    class AuthorManager(admin.ModelAdmin):
+        list_display = ['id', 'name', 'age'] #控制哪些字段显示在列表页面
+        list_display_links = ['name'] #将‘title’字段链接到“更改”页面
+        list_filter = ['age'] # 激活列表右侧过滤器
+        search_fields = ['name','age'] #启用列表页面上方搜索框
+        list_editable = ['age']  #允许在列表页面上修改
+    admin.site.register(Author,AuthorManager)
+    ```
+  
   - 将bookstore_author 表名称改为myauthor (需要重新迁移数据库)
-
-
+  
+  
+  files:bookstore/models.py
+  
+  ```
+  class Author(models.Model):
+        name=models.CharField(max_length=11,verbose_name='姓名')
+        age=models.IntegerField(default=1,verbose_name='年龄')
+        email=models.EmailField(null=True,verbose_name='邮箱')
+        def __str__(self):
+          return '<%s,%s,%s>' % (self.name,self.age,self.email)
+          
+          
+        class Meta:
+          # 当前model类对应的数据表表名
+            db_table='author'
+          verbose_name='myauthor'
+            verbose_name_plural=verbose_name
+  
+  
+  ```
+  
+  
+  
 
 ## 数据表关联关系映射
 
@@ -2779,7 +2943,7 @@ for book in books:
    ```
    
 - 多对多最终的SQL结果
-   
+  
 ```sql
    mysql> select * from many2many_author;
    +----+-----------+
@@ -2810,17 +2974,65 @@ for book in books:
    | 19 |      15 |        12 |
    +----+---------+-----------+
    4 rows in set (0.00 sec)
-   ```
-
-## session - 会话
-
-保持会话状态  
-
-
+```
 
 ## cookies 和 session
 
-### cookies
+### 两者区别
+
+  1、Cookie和Session都是会话技术，Cookie是运行在客户端，Session是运行在服务器端。
+
+  2、Cookie有大小限制以及浏览器在存cookie的个数也有限制，Session是没有大小限制和服务器的内存大小有关。
+
+  3、Cookie有安全隐患，通过拦截或本地文件找得到你的cookie后可以进行攻击。
+
+  4、cookie的生命周期很长，而session很短，一般也就几十分钟。如果session过多会增加服务器的压力。
+
+### 结合保存登录状态主题思想
+
+1.检查登录状态思想
+
+​	1.优先检查session
+
+​	2.session没有数据，检查cookies，cooKies没有数据 则会写session
+
+​	3.cookies没有数据，则让用户去登录页面
+
+2.登录状态存储思想
+
+​	1.肯定要存session，username，uid
+
+​	2.按需去存cookies,【根据用户是否勾选保存密码/下次免密登录决定】
+
+### cookies 
+
+#### 作用
+
+1.保持会话状态  
+
+2.购物车 - 未登录状态下的购物记录
+
+3.搜索引擎 - 记录当前您的搜索记录
+
+#### 缺点
+
+1.数据存储在客户/用户端
+
+2.每次请求网站，自动提交当前网站的cookie,
+
+3.网络带宽
+
+#### 三大特点
+
+1.存在浏览器
+
+2.按域名隔离存储，并且是key-value 形式，且每个key都带有过期时间[回话/时间UTC]
+
+3.自动提交。每个请求按域名发送当前域名下的所有Cookies
+
+注意：Cookies不要存储敏感数据-密码
+
+#### cookies概述
 
 - cookies是保存在客户端浏览器上的存储空间，通常用来记录浏览器端自己的信息和当前连接的确认信息
 
@@ -2830,7 +3042,7 @@ for book in books:
 
 - 在Django 服务器端来设置 设置浏览器的COOKIE 必须通过 HttpResponse 对象来完成
 
-- HttpResponse 关于COOKIE的方法
+#### 存储cookie
 
   - 添加、修改COOKIE
     - HttpResponse.set_cookie(key, value='', max_age=None, expires=None)
@@ -2843,7 +3055,7 @@ for book in books:
     - HttpResponse.delete_cookie(key)
     - 删除指定的key 的Cookie。 如果key 不存在则什么也不发生。
 
-- Django中的cookies
+- Django中使用
 
   - 使用 响应对象HttpResponse 等 将cookie保存进客户端
 
@@ -2870,14 +3082,14 @@ for book in books:
        resp.set_cookie('cookies名', cookies值, 超期时间)
        ```
 
-  3. 获取cookie
+  #### 获取cookie
 
-     - 通过 request.COOKIES 绑定的字典(dict) 获取客户端的 COOKIES数据
+  - 通过 request.COOKIES 绑定的字典(dict) 获取客户端的 COOKIES数据
 
-       ```python
-       value = request.COOKIES.get('cookies名', '没有值!')
-       print("cookies名 = ", value)
-       ```
+    ```python
+    value = request.COOKIES.get('cookies名', '没有值!')
+    print("cookies名 = ", value)
+    ```
 
   4. 注:
 
@@ -2914,7 +3126,7 @@ for book in books:
     return responds
     ```
 
-  - 获取cookie
+#### 获取cookie
 
     ```python
     # 获取浏览器中 my_var变量对应的值
@@ -2958,11 +3170,25 @@ for book in books:
 
 
 
-### session 会话控制
+### session
 
-- 什么是session
+#### 作用
 
-- session又名会话控制，是在服务器上开辟一段空间用于保留浏览器和服务器交互时的重要数据
+存储会话状态-登录状态
+
+#### 缺点
+
+单表【点】问题
+
+#### 单表问题 
+
+django所有session数据存储在单个表中，表名为django_session;  并且该表没有自动回收【过期的session】，
+
+可执行python3 manage.py clearsessions 命令进行 过期session的删除
+
+#### session概述
+
+- session又名会话控制，是在服务器上开辟一段空间用于保留浏览器和服务器交互时的重要数据，保持会话状态  
 
 - session的起源
 
@@ -2984,7 +3210,7 @@ for book in books:
 
     ```python
     INSTALLED_APPS = [
-        # 启用 sessions 应用
+        # 启用 sessions 应用 33行
         'django.contrib.sessions',
     ]
     ```
@@ -3001,11 +3227,16 @@ for book in books:
 - session的基本操作:
 
   - session对于象是一个在似于字典的SessionStore类型的对象, 可以用类拟于字典的方式进行操作
-  - session 只能够存储能够序列化的数据,如字典，列表等。
+  
+- session 只能够存储能够序列化的数据,如字典，列表等。
+  
+#### 保存session    
 
-  1. 保存 session 的值到服务器
-     - `request.session['KEY'] = VALUE`
-  2. 获取session的值
+  - `request.session['KEY'] = VALUE`
+  - 清除：python3 manage.py clearsessions
+
+#### 获取session
+
      - `VALUE = request.session['KEY']`
      - `VALUE = request.session.get('KEY', 缺省值)`
 
@@ -3022,6 +3253,1209 @@ for book in books:
       - `import django.conf.global_settings`
 
 - 注: 当使用session时需要迁移数据库,否则会出现错误
+
+
+
+## 网络云笔记项目
+
+- 功能:
+  1. 注册
+  1. 登陆
+  1. 退出登陆
+  1. 查看笔记列表
+  1. 创建新笔记
+  1. 修改笔记
+  1. 删除笔记
+
+### 数据库设计
+
+- 模型类
+
+  1. 用户模型类
+
+     ```python
+     class User(models.Model):
+         username = models.CharField("用户名", max_length=30, unique=True)
+         password = models.CharField("密码", max_length=30)
+     create_time = models.DateTimeField('创建时间', auto_now_add=True)
+     
+         def __str__(self):
+             return "用户" + self.username
+     ```
+
+  2. 笔记模型类
+
+  
+      from django.db import models
+      from user.models import User
+        
+      class Note(models.Model):
+        title = models.CharField('标题', max_length=100)
+          content = models.TextField('内容')
+          create_time = models.DateTimeField('创建时间', auto_now_add=True)
+          mod_time = models.DateTimeField('修改时间', auto_now=True)
+      user = models.ForeignKey(User)
+      	isActive=models.BooleanField('是否激活',default=True)
+
+### 设计规范
+
+- 登陆设计规范(在user应用中写代码)
+
+  | 路由正则     | 视图函数                  | 模板位置                     | 说明         |
+  | ------------ | ------------------------- | ---------------------------- | ------------ |
+  | /user/login  | def login_view(request):  | templates/user/login.html    | 用户登陆     |
+  | /user/reg    | def reg_view(request):    | templates/user/register.html | 用户注册     |
+  | /user/logout | def logout_view(request): | 无                           | 退出用户登陆 |
+
+  - 参考界面:
+    - 登陆界面
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/login.png)
+    - 注册界面
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/reg.png)
+
+- 主页设计规范(在index应用中写代码)
+
+  | 路由正则 | 视图函数                 | 模板位置                   | 说明 |
+  | -------- | ------------------------ | -------------------------- | ---- |
+  | /        | def index_view(request): | templates/index/index.html | 主页 |
+
+  - 参考界面
+    - 登陆前
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/index1.png)
+    - 登陆后
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/index3.png)
+
+- 云笔记设计规范
+
+  | 路由正则        | 视图函数                    | 模板位置                      | 说明             |
+  | --------------- | --------------------------- | ----------------------------- | ---------------- |
+  | /note/          | def list_view(request):     | templates/note/list_note.html | 显示笔记列表功能 |
+  | /note/add       | def add_view(request):      | templates/note/add_note.html  | 添加云笔记       |
+  | /note/mod/(\d+) | def mod_view(request, id):  | templates/note/mod_note.html  | 修改之前云笔记   |
+  | /note/del/(\d+) | def del_view(request, id):  | 无(返回列表页)                | 删除云笔记       |
+  | /note/(\d+)     | def show_view(request, id): | templates/note/note.html      | 查看单个云笔记   |
+
+  - 参考界面
+    - 登陆界面
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/login.png)
+    - 注册界面
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/reg.png)
+    - 添加新笔记界面
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/new_note.png)
+    - 显示笔记列表
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/list_note.png)
+    - 修改云笔记
+      - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/mod_note.png)
+    - 主页
+      - 登陆前
+        - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/index1.png)
+      - 登陆后
+        - ![](/home/tarena/1907/base04/django/day06-note/cloud_note_images/index2.png)
+
+
+
+## 缓存
+
+### 什么是缓存？
+
+缓存是一类可以更快的读取数据的介质统称，也指其它可以加快数据读取的存储方式。一般用来存储临时数据，常用介质的是读取速度很快的内存
+
+### 为什么使用缓存？
+
+视图渲染有一定成本，对于低频变动的页面可以考虑使用缓存技术，减少实际渲染次数
+
+案例分析
+
+```python
+from django.shortcuts import render
+
+def index(request):
+    # 时间复杂度极高的渲染
+    book_list = Book.objects.all()  #-> 此处假设耗时2s
+    return render(request, 'index.html', locals())
+```
+
+优化思想
+
+```python
+given a URL, try finding that page in the cache
+if the page is in the cache:
+    return the cached page
+else:
+    generate the page
+    save the generated page in the cache (for next time)
+    return the generated page
+```
+
+
+
+### 使用缓存场景：
+
+1，博客列表页
+
+2，电商商品详情页
+
+3，缓存导航及页脚
+
+
+
+### Django中设置缓存
+
+Django中提供多种缓存方式，如需使用需要在settings.py中进行配置
+
+1,数据库缓存
+
+Django可以将其缓存的数据存储在您的数据库中
+
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
+        'OPTIONS':{
+            'MAX_ENTRIES': 300,
+            'CULL_FREQUENCY': 2,
+        }
+    }
+}
+```
+
+创建缓存表
+
+```python
+python3 manage.py createcachetable
+```
+
+
+
+2,文件系统缓存
+
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',#这个是文件夹的路径
+        #'LOCATION': 'c:\test\cache',#windows下示例
+    }
+}
+```
+
+
+
+3, 本地内存缓存
+
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake'
+    }
+}
+```
+
+### Django中使用缓存
+
+- 在视图View中使用
+- 在路由URL中使用
+- 在模板中使用
+
+在视图View中使用cache
+
+```python
+from django.views.decorators.cache import cache_page
+
+@cache_page(30)  -> 单位s
+def my_view(request):
+    ...
+```
+
+在路由中使用
+
+```python
+from django.views.decorators.cache import cache_page
+
+urlpatterns = [
+    path('foo/', cache_page(60)(my_view)),
+]
+```
+
+在模板中使用 导航 - 欢迎XXX
+
+```python
+{% load cache %}
+{% cache 500 sidebar request.user.username %}
+    .. sidebar for logged in user ..
+{% endcache %}
+
+```
+
+### 浏览器中的缓存
+
+![浏览器缓存](/home/tarena/1907/base04/django/day07/images/浏览器缓存.png)
+
+浏览器缓存分类：
+
+#### 强缓存
+
+**不会向服务器发送请求，直接从缓存中读取资源**
+
+1，Expires
+
+**缓存过期时间，用来指定资源到期的时间，是服务器端的具体的时间点**
+
+Expires=max-age + 请求时间
+
+**Expires 是 HTTP/1 的产物，受限于本地时间，如 果修改了本地时间，可能会造成缓存失效**
+
+
+
+2, Cache-Control 
+
+在HTTP/1.1中，Cache-Control主要用于控制网页缓存。比如当`Cache-Control:max-age=120  `代表请求创建时间后的120秒，缓存失效
+
+
+
+横向对比   Expires  VS Cache-Control
+
+
+
+#### 协商缓存
+
+**协商缓存就是强制缓存失效后，浏览器携带缓存标识向服务器发起请求，由服务器根据缓存标识决定是否使用缓存的过程
+
+1，Last-Modified和If-Modified-Since
+
+​	第一次访问时，服务器会返回 
+
+  Last-Modified: Fri, 22 Jul 2016 01:47:00 GMT
+
+​	浏览器下次请求时 携带If-Modified-Since这个header , 该值为 Last-Modified
+
+​	服务器接收请求后，对比结果，若资源未发生改变，则返回304， 否则返回200并将新资源返回给浏览器
+
+​	缺点：只能精确到秒，容易发生单秒内多次修改，检测不到
+
+
+
+2，ETag和If-None-Match
+
+​	Etag是服务器响应请求时，返回当前资源文件的一个唯一标识(由服务器生成)，只要资源有变化，Etag就会重新生成
+
+​	流程同上
+
+
+
+对比  Last-Modified VS  ETag  
+
+1，精度不一样 -  Etag 高
+
+2，性能上 - Last-Modifi 高
+
+3，优先级 - Etag 高
+
+#### 总结(考试必背)
+
+1.浏览器-发出请求时【浏览器地址栏回车/摁钮/超链接-get】,浏览器优先检查是否有强缓存，
+
+​	1.如果没有强缓存，浏览器发出HTTP请求至服务器端
+
+​	2.有强缓存-但是缓存过期：
+
+​		尝试协商缓存 - 【Last_Modified/Etag】
+
+​				1.Last_Modifide
+
+​							把上次缓存响应头中的Last_Modifide的值赋值给if-Modifide-Since请求头，发送至服务器，如果服务器端对比当前响应的Modifide和请求头中一致，则返回304且响应体为空，否则返回200且响应中携带最新数据
+
+​				2.Etag  
+
+​							把上次缓存响应头中的Etag的值赋值给if-None-Match请求头，剩余步骤同上
+
+
+
+
+## 中间件 Middleware
+
+- 中间件是 Django 请求/响应处理的钩子框架。它是一个轻量级的、低级的“插件”系统，用于全局改变 Django 的输入或输出。
+- 每个中间件组件负责做一些特定的功能。例如，Django 包含一个中间件组件 AuthenticationMiddleware，它使用会话将用户与请求关联起来。
+- 他的文档解释了中间件是如何工作的，如何激活中间件，以及如何编写自己的中间件。Django 具有一些内置的中间件，你可以直接使用。它们被记录在 built-in middleware reference 中。
+- 中间件类:
+  - 中间件类须继承自 `django.utils.deprecation.MiddlewareMixin`类
+  - 中间件类须实现下列五个方法中的一个或多个:
+    - `def process_request(self, request):` 执行路由之前被调用，在每个请求上调用，返回None或HttpResponse对象 
+    - `def process_view(self, request, callback, callback_args, callback_kwargs):` 调用视图之前被调用，在每个请求上调用，返回None或HttpResponse对象
+    - `def process_response(self, request, response):` 所有响应返回浏览器  被调用，在每个请求上调用，返回HttpResponse对象
+    - `def process_exception(self, request, exception):` 当处理过程中抛出异常时调用，返回一个HttpResponse对象
+    - `def process_template_response(self, request, response):` 在视图刚好执行完毕之后被调用，在每个请求上调用，返回实现了render方法的响应对象
+  - 注： 中间件中的大多数方法在返回None时表示忽略当前操作进入下一项事件，当返回HttpResponese对象时表示此请求结束，直接返回给客户端
+
+- 编写中间件类:
+
+```python
+# file : middleware/mymiddleware.py
+from django.http import HttpResponse, Http404
+from django.utils.deprecation import MiddlewareMixin
+
+class MyMiddleWare(MiddlewareMixin):
+    def process_request(self, request):
+        print("中间件方法 process_request 被调用")
+
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+        print("中间件方法 process_view 被调用")
+
+    def process_response(self, request, response):
+        print("中间件方法 process_response 被调用")
+        return response
+
+    def process_exception(self, request, exception):
+        print("中间件方法 process_exception 被调用")
+
+    def process_template_response(self, request, response):
+        print("中间件方法 process_template_response 被调用")
+        return response
+
+```
+
+- 注册中间件:
+
+```python
+# file : settings.py
+MIDDLEWARE = [
+    ...
+       ]
+
+```
+
+- 中间件的执行过程
+  - ![](/home/tarena/1907/base04/django/day07/images/middleware.jpeg)
+
+
+- 练习
+
+  - 用中间件实现强制某个IP地址只能向/test 发送 5 次GET请求
+
+  - 提示:
+
+    - request.META['REMOTE_ADDR'] 可以得到远程客户端的IP地址
+    - request.path_info 可以得到客户端访问的GET请求路由信息
+
+  - 答案:
+
+    ```python
+    from django.http import HttpResponse, Http404
+    from django.utils.deprecation import MiddlewareMixin
+    import re
+    class VisitLimit(MiddlewareMixin):
+        '''此中间件限制一个IP地址对应的访问/user/login 的次数不能改过5次,超过后禁止使用'''
+        visit_times = {}  # 此字典用于记录客户端IP地址有访问次数
+        def process_request(self, request):
+            ip_address = request.META['REMOTE_ADDR']  # 得到IP地址
+            if not re.match('^/test', request.path_info):
+                return
+            times = self.visit_times.get(ip_address, 0)
+            print("IP:", ip_address, '已经访问过', times, '次!:', request.      )
+            self.visit_times[ip_address] = times + 1
+            if times < 5:
+                return None
+    
+            return HttpResponse('你已经访问过' + str(times) + '次，您被禁止了')
+    
+    ```
+
+
+## 跨站请求伪造保护 CSRF
+
+- 跨站请求伪造攻击
+
+  - 某些恶意网站上包含链接、表单按钮或者JavaScript，它们会利用登录过的用户在浏览器中的认证信息试图在你的网站上完成某些操作，这就是跨站请求伪造(CSRF，即Cross-Site Request Forgey)。 
+
+- 说明:
+
+- CSRF中间件和模板标签提供对跨站请求伪造简单易用的防护。 
+
+- 作用:  
+
+  - 不让其它表单提交到此 Django 服务器
+
+- 解决方案:
+
+  1. 取消 csrf 验证(不推荐)
+
+     - 删除 settings.py 中 MIDDLEWARE 中的 `django.middleware.csrf.CsrfViewMiddleware` 的中间件
+
+  2. 通过验证 csrf_token 验证
+
+     ```python
+     需要在表单中增加一个标签 
+     {% csrf_token %}
+     
+     ```
+
+ 
+
+## 分页
+
+- 分页是指在web页面有大量数据需要显示，为了阅读方便在每个页面中只显示部分数据。
+- 好处:
+  1. 方便阅读
+  2. 减少数据提取量，减轻服务器压力。
+- Django提供了Paginator类可以方便的实现分页功能 
+- Paginator类位于`django.core.paginator` 模块中。
+
+### Paginator对象
+
+- 对象的构造方法
+  - Paginator(object_list, per_page)
+  - 参数
+    - object_list 需要分类数据的对象列表
+    - per_page 每页数据个数
+  - 返回值:
+    - 分页对象
+
+- Paginator属性
+  - count：需要分类数据的对象总数
+  - num_pages：分页后的页面总数
+  - page_range：从1开始的range对象, 用于记录当前面码数
+  - per_page 每页数据的个数
+
+- Paginator方法
+  - Paginator.page(number)
+    - 参数 number为页码信息(从1开始)
+    - 返回当前number页对应的页信息
+    - 如果提供的页码不存在，抛出InvalidPage异常
+
+- Paginator异常exception
+  - InvalidPage：当向page()传入一个无效的页码时抛出
+  - PageNotAnInteger：当向page()传入一个不是整数的值时抛出
+  - EmptyPage：当向page()提供一个有效值，但是那个页面上没有任何对象时抛出
+
+### Page对象
+
+- 创建对象
+  Paginator对象的page()方法返回Page对象，不需要手动构造
+- Page对象属性
+  - object_list：当前页上所有数据对象的列表
+  - number：当前页的序号，从1开始
+  - paginator：当前page对象相关的Paginator对象
+- Page对象方法
+  - has_next()：如果有下一页返回True
+  - has_previous()：如果有上一页返回True
+  - has_other_pages()：如果有上一页或下一页返回True
+  - next_page_number()：返回下一页的页码，如果下一页不存在，抛出InvalidPage异常
+  - previous_page_number()：返回上一页的页码，如果上一页不存在，抛出InvalidPage异常
+  - len()：返回当前页面对象的个数
+- 说明:
+  - Page 对象是可迭代对象,可以用 for 语句来 访问当前页面中的每个对象
+
+- 参考文档<https://docs.djangoproject.com/en/1.11/topics/pagination/>
+
+
+- 分页示例:
+
+  - 视图函数
+
+  ```python
+  from django.core.paginator import Paginator
+  def book(request):
+      bks = models.Book.objects.all()
+      paginator = Paginator(bks, 10)
+      print('当前对象的总个数是:', paginator.count)
+      print('当前对象的面码范围是:', paginator.page_range)
+      print('总页数是：', paginator.    )
+      print('每页最大个数:', paginator.per_page)
+  
+      cur_page = request.GET.get('page', 1)  # 得到默认的当前页
+      page = paginator.page(cur_page)
+      return render(request, 'bookstore/book.html', locals())
+  
+  ```
+
+  - 模板设计
+
+  ```html
+  <html>
+  <head>
+      <title>分页显示</title>
+  </head>
+  <body>
+  {% for b in page %}
+      <div>{{ b.title }}</div>
+  {% endfor %}
+  
+  {# 分页功能 #}
+  {# 上一页功能 #}
+  {% if page.has_previous %}
+  <a href="{% url 'book' %}?page={{ page.previous_page_number }}">上一页</a>
+  {% else %}
+  上一页
+  {% endif %}
+  
+  {% for p in paginator.page_range %}
+      {% if p == page.number %}
+          {{ p }}
+      {% else %}
+          <a href="{% url 'book' %}?page={{ p }}">{{ p }}</a>
+      {% endif %}
+  {% endfor %}
+  
+  {#下一页功能#}
+  {% if page.has_next %}
+  <a href="{% url 'book' %}?page={{ page.next_page_number }}">下一页</a>
+  {% else %}
+  下一页
+  {% endif %}
+  </body>
+  </html>
+  ```
+
+
+## 文件上传下载
+
+```
+上传：form enctype-'muiltpart/form-data'
+	 input type = 'file' name = 'myfile'
+	 request.FILES['myfile']
+```
+
+```
+下载csv：1.换掉响应头的Content-Type ->'text/csv'
+		2.添加特殊的附件响应头 Content-Disposition:'attachment:filename="my.csv"'
+```
+
+- 文件上传必须为POST提交方式
+- 表单`<form>`中文件上传时必须有带有`enctype="multipart/form-data"` 时才会包含文件内容数据。
+- 表单中用`<input type="file" name="xxx">`标签上传文件
+  - 名字`xxx`对应`request.FILES['xxx']` 对应的内存缓冲文件流对象。可通能过`request.FILES['xxx']` 返回的对象获取上传文件数据
+  - `file=request.FILES['xxx']` file 绑定文件流对象，可以通过文件流对象的如下信息获取文件数据
+    file.name 文件名
+    file.file 文件的字节流数据
+
+
+- 上传文件的表单书写方式
+
+  ```html
+  <!-- file: index/templates/index/upload.html -->
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <title>文件上传</title>
+  </head>
+  <body>
+      <h3>上传文件</h3>
+      <form method="post" action="/upload" enctype="multipart/form-data">
+          <input type="file" name="myfile"/><br>
+          <input type="submit" value="上传">
+      </form>
+  </body>
+  </html>
+  ```
+
+- 在setting.py 中设置一个变量MEDIA_ROOT 用来记录上传文件的位置
+
+  ```python
+  # file : settings.py
+  ...
+  MEDIA_ROOT = os.path.join(BASE_DIR, 'static/files')
+  ```
+
+- 在当前项目文件夹下创建 `static/files` 文件夹
+
+  ```shell
+  $ mkdir -p static/files
+  ```
+
+- 添加路由及对应的处理函数
+
+  ```python
+  # file urls.py
+  urlpatterns = [
+      url(r'^admin/', admin.site.urls),
+      url(r'^upload', views.upload_view)
+  ]
+  ```
+
+- 上传文件的视图处理函数
+
+  ```python
+  # file views.py
+  from django.http import HttpResponse, Http404
+  from django.conf import settings
+  import os
+  
+  def upload_view(request):
+      if request.method == 'GET':
+          return render(request, 'index/upload.html')
+      elif request.method == "POST":
+          a_file = request.FILES['myfile']
+          print("上传文件名是:", a_file.name)
+  
+          filename =os.path.join(settings.MEDIA_ROOT, a_file.name)
+          with open(filename, 'wb') as f:
+              data = a_file.file.read()
+              f.write(data)
+          return HttpResponse("接收文件:" + a_file.name + "成功")
+      raise Http404
+  ```
+
+- 访问地址: <http://127.0.0.1:8000/static/upload.html>
+
+
+## Django用户认证
+
+- Django带有一个用户认证系统。 它处理用户账号、组、权限以及基于cookie的用户会话。
+
+- 作用:
+
+  1. 添加普通用户和超级用户
+  2. 修改密码
+
+- 文档参见
+
+- <https://docs.djangoproject.com/en/1.11/topics/auth/>
+
+- User模型类
+
+- 位置: `from django.contrib.auth.models import User`
+
+- 默认user的基本属性有：
+
+  | 属性名       | 类型                                                         | 是否必选 |
+  | ------------ | ------------------------------------------------------------ | -------- |
+  | username     | 用户名                                                       | 是       |
+  | password     | 密码                                                         | 是       |
+  | email        | 邮箱                                                         | 可选     |
+  | first_name   | 名                                                           |          |
+  | last_name    | 姓                                                           |          |
+  | is_superuser | 是否是管理员帐号(/admin)                                     |          |
+  | is_staff     | 是否可以访问admin管理界面                                    |          |
+  | is_active    | 是否是活跃用户,默认True。一般不删除用户，而是将用户的is_active设为False。 |          |
+  | last_login   | 上一次的登录时间                                             |          |
+  | date_joined  | 用户创建的时间                                               |          |
+
+- 数据库表现形式
+
+```sql
+mysql> use myauth;
+mysql> desc auth_user;
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| id           | int(11)      | NO   | PRI | NULL    | auto_increment |
+| password     | varchar(128) | NO   |     | NULL    |                |
+| last_login   | datetime(6)  | YES  |     | NULL    |                |
+| is_superuser | tinyint(1)   | NO   |     | NULL    |                |
+| username     | varchar(150) | NO   | UNI | NULL    |                |
+| first_name   | varchar(30)  | NO   |     | NULL    |                |
+| last_name    | varchar(30)  | NO   |     | NULL    |                |
+| email        | varchar(254) | NO   |     | NULL    |                |
+| is_staff     | tinyint(1)   | NO   |     | NULL    |                |
+| is_active    | tinyint(1)   | NO   |     | NULL    |                |
+| date_joined  | datetime(6)  | NO   |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+
+11 rows in set (0.00 sec)
+```
+
+### auth基本模型操作:
+
+- 创建用户
+
+  - 创建普通用户create_user
+
+    ```python
+    from django.contrib.auth import models
+    user = models.User.objects.create_user(username='用户名', password='密码', email='邮箱',...)
+    ...
+    user.save()
+    ```
+
+  - 创建超级用户create_superuser
+
+    ```python
+    from django.contrib.auth import models
+    user = models.User.objects.create_superuser(username='用户名', password='密码', email='邮箱',...)
+    ...
+    user.save()
+    ```
+
+- 删除用户
+
+  ```python
+  from django.contrib.auth import models
+  try:
+      user = models.User.objects.get(username='用户名')
+      user.is_active = False  # 记当前用户无效
+      user.save()
+      print("删除普通用户成功！")
+  except:
+      print("删除普通用户失败")
+  return HttpResponseRedirect('/user/info')
+  ```
+
+- 修改密码set_password
+
+  ```python
+  from django.contrib.auth import models
+  try:
+      user = models.User.objects.get(username='xiaonao')
+      user.set_password('654321')
+      user.save()
+      return HttpResponse("修改密码成功！")
+  except:
+      return HttpResponse("修改密码失败！")
+  ```
+
+- 检查密码是否正确check_password
+
+  ```python
+  from django.contrib.auth import models
+  try:
+      user = models.User.objects.get(username='xiaonao')
+      if user.check_password('654321'):  # 成功返回True,失败返回False
+          return HttpResponse("密码正确")
+      else:
+          return HttpResponse("密码错误")
+  except: 
+      return HttpResponse("没有此用户！")
+  ```
+
+### 哈希三大特点
+
+定长输出【无论输入多长，输出都是定长】、雪崩【一变则巨变】、不可逆【无法反算回明文】
+
+自行处理密码存储策略
+1.当用户注册时，将用户传递过来的明文密码进行 如 md5,sha系列的哈希算法【散列】；
+ pw=request.POST.get('password')
+ pw += 'salt'
+ import hashlib
+ m5 = hashlib.md5()
+ m5.update(pw.encode())
+ pw_md5 = md5.hexdigest()
+
+2.当用户登录时
+
+用户登录时填写的密码
+
+pw = request.POST.get('password')
+pw += 'salt'
+import hashlib
+m5 = hashlib.md5()
+m5.update(pw.encode())
+pw_md5 = md5.hexdigest()
+
+user = User.objects.get(username=username)
+if user.password != pw_md5：
+	return '用户名或密码错误'
+
+## 生成CSV文件
+
+Django可直接在视图函数中生成csv文件 并响应给浏览器
+
+```python
+import csv
+from django.http import HttpResponse
+from .models import Book
+
+def make_csv_view(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="mybook.csv"'
+	all_book = Book.objects.all()
+    writer = csv.writer(response)
+    writer.writerow(['id', 'title'])
+    for b in all_book:    
+    	writer.writerow([b.id, b.title])
+
+    return response
+```
+
+- 响应获得一个特殊的MIME类型*text / csv*。这告诉浏览器该文档是CSV文件，而不是HTML文件
+- 响应会获得一个额外的`Content-Disposition`标头，其中包含CSV文件的名称。它将被浏览器用于“另存为...”对话框
+- 对于CSV文件中的每一行，调用`writer.writerow`，传递一个可迭代对象，如列表或元组。
+
+
+
+## 电子邮件发送
+
+- 利用QQ邮箱发送电子邮件
+- django.core.mail 子包封装了 电子邮件的自动发送SMT协议
+- 前其准备:
+  1. 申请QQ号
+  2. 用QQ号登陆QQ邮箱并修改设置
+     - 用申请到的QQ号和密码登陆到 <https://mail.qq.com/>
+     - 修改 `QQ邮箱->设置->帐户->“POP3/IMAP......服务”`
+     - 校验码：ysvkdcmsmkdybcij
+  3. 设置Django服务器端的，用简单邮件传输协议SMTP(Simple Mail Transfer Protocol) 发送电子邮件
+- settings.py 设置
+
+```python
+# 发送邮件设置
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' # 固定写法
+EMAIL_HOST = 'smtp.qq.com' # 腾讯QQ邮箱 SMTP 服务器地址
+EMAIL_PORT = 25  # SMTP服务的端口号
+EMAIL_HOST_USER = 'xxxx@qq.com'  # 发送邮件的QQ邮箱
+EMAIL_HOST_PASSWORD = 'ysvkdcmsmkdybcij'  # 在QQ邮箱->设置->帐户->“POP3/IMAP......服务” 里得到的在第三方登录QQ邮箱授权码
+EMAIL_USE_TLS = True  # 与SMTP服务器通信时，是否启动TLS链接(安全链接)默认false
+```
+
+视图函数中
+
+```python
+from django.core import mail
+mail.send_mail(
+            subject='测试',  #题目
+            message='哈哈哈哈',  # 消息内容
+            from_email='765512581@qq.com',  # 发送者[当前配置邮箱]
+            recipient_list=['licuicui159@126.com','licui@163.com']  # 接收者邮件列表
+            )
+```
+
+```
+from django.core import mail
+mail.send_mail(subject='测试',message='哈哈哈哈',from_email='765512581@qq.com',recipient_list=['licuicui159@126.com','licu@163.com']])
+```
+
+
+
+## 项目部署
+
+- 项目部署是指在软件开发完毕后，将开发机器上运行的开发板软件实际安装到服务器上进行长期运行
+- 部署要分以下几个步骤进行
+  1. 在安装机器上安装和配置同版本的数据库
+  1. django 项目迁移(在安装机器上配置与开发环境相同的python版本及依懒的包)
+  1. 用 uwsgi 替代`python3 manage.py runserver` 方法启动服务器
+  1. 配置 nginx 反向代理服务器
+  1. 用nginx 配置静态文件路径,解决静态路径问题
+
+1. 安装同版本的数据库
+
+   - 安装步骤略
+
+2. django 项目迁移
+
+   1. 安装python
+
+      - `$ sudo apt install python3`
+
+   2. 安装相同版本的包
+
+      - 导出当前模块数据包的信息:
+        - `$ pip3 freeze > package_list.txt`
+      - 导入到另一台新主机
+        - `$ pip3 install -r package_list.txt`
+
+   3. 将当前项目源代码复制到远程主机上(scp 命令)
+
+      - $ sudo scp -a 当前项目源代码 远程主机地址和文件夹
+
+      - ```
+        sudo scp -a /home/tarena/django/mysite1 .zip 用户名
+        @88.77.66.55:/home/root/xxx
+        请输入root密码：（输入公有云对应用户、密码）
+        
+        ```
+
+​        
+
+​         4.连接公有云  
+
+​					
+
+    window
+    xshell 安装 ssh 协议
+    
+    linux
+    终端里 ssh 用户名@公网地址
+
+
+​        
+
+
+### WSGI Django工作环境部署
+
+- WSGI (Web Server Gateway Interface)Web服务器网关接口，是Python应用程序或框架和Web服务器之间的一种接口，被广泛使用
+- 它实现了WSGI协议、http等协议。Nginx中HttpUwsgiModule的作用是与uWSGI服务器进行交换。WSGI是一种Web服务器网关接口。
+
+### uWSGI 网关接口配置 (ubuntu 18.04 配置)
+
+- 使用 `python manage.py runserver` 通常只在开发和测试环境中使用。
+
+- 当开发结束后，完善的项目代码需要在一个高效稳定的环境中运行，这时可以使用uWSGI
+
+- uWSGI是WSGI的一种,它可以让Django、Flask等开发的web站点运行其中.
+
+- 安装uWSGI
+
+  - 在线安装 uwsgi
+
+    ```shell
+    $ sudo pip3 install uwsgi
+    
+    ```
+
+  - 离线安装
+
+    1. 在线下载安装包: 
+
+       ```shell
+       $ pip3 download uwsgi
+       
+       ```
+
+       - 下载后的文件为 `uwsgi-2.0.18.tar.gz`
+
+    2. 离线安装
+
+       ```shell
+       $ tar -xzvf uwsgi-2.0.18.tar.gz
+       $ cd uwsgi-2.0.18
+       $ sudo python3 setup.py install
+       ```
+    
+       3.查看安装版本
+    
+    ```
+    tarena@tarena:~$ uwsgi --version
+    2.0.18
+    ```
+    
+    
+
+- 配置uWSGI
+
+  - 添加配置文件 `项目文件夹/uwsgi.ini`
+
+    - 如: mysite1/uwsgi.ini
+
+    ```ini
+    [uwsgi]
+    # 套接字方式的 IP地址:端口号
+    # socket=127.0.0.1:8000
+    # Http通信方式的 IP地址:端口号
+    http=127.0.0.1:8000
+    # 项目当前工作目录
+    chdir=/home/tarena/.../my_project 这里需要换为项目文件夹的绝对路径
+    # 项目中wsgi.py文件的目录，相对于当前工作目录
+    wsgi-file=my_project/wsgi.py
+    # 进程个数
+    process=4
+    # 每个进程的线程个数
+    threads=2
+    # 服务的pid记录文件
+    pidfile=uwsgi.pid
+    # 服务的日志文件位置
+    daemonize=uwsgi.log
+    master=true
+    ```
+
+  - 修改settings.py  26行 
+
+    将 DEBUG=True 改为DEBUG=False
+
+  - 修改settings.py  28行
+
+    将　ALLOWED_HOSTS = [] 改为　ALLOWED_HOSTS = ['*']
+
+### uWSGI的运行管理
+
+  ```
+  创建配置文件,修改路径
+  $ touch uwsgi.ini
+  
+  启动uwsgi
+  $ ls
+  db.sqlite3  index  manage.py  middleware  mysite8  static  uwsgi.ini
+  
+  $ sudo uwsgi --ini uwsgi.ini
+  [sudo] tarena 的密码： 
+  [uWSGI] getting INI configuration from uwsgi.ini
+  
+  $ ps aux|grep 'uwsgi'
+  
+  浏览器打开：http://127.0.0.1:8000/index/book
+  
+  终端打开日志：
+  sudo vim uwsgi.log
+  
+  关闭uwsgi
+  sudo uwsgi --stop uwsgi.pid
+  
+  查看uwsgi状态是否关闭
+  ps aux|grep 'uwsgi'
+  ```
+
+  
+
+  - 启动 uwsgi
+
+    ```shell
+    $ cd 项目文件夹
+    $ sudo uwsgi --ini 项目文件夹/uwsgi.ini
+    
+    ```
+
+  - 停止 uwsgi
+
+    ```shell
+    $ cd 项目文件夹
+    $ sudo uwsgi --stop uwsgi.pid
+    
+    ```
+
+  - 说明:
+
+    - 当uwsgi 启动后,当前django项目的程序已变成后台守护进程,在关闭当前终端时此进程也不会停止。
+
+- 测试:
+
+  - 在浏览器端输入<http://127.0.0.1:8000> 进行测试
+  - 注意，此时端口号为8000
+
+### nginx 反向代理配置
+
+- Nginx是轻量级的高性能Web服务器，提供了诸如HTTP代理和反向代理、负载均衡、缓存等一系列重要特性，在实践之中使用广泛。
+
+- C语言编写，执行效率高
+
+- nginx 作用
+
+  - 负载均衡， 多台服务器轮流处理请求
+  - 反向代理
+
+- 原理:
+
+- 客户端请求nginx,再由nginx 请求 uwsgi, 运行django下的python代码
+
+- ubuntu 下 nginx 安装 
+  $ sudo apt install nginx
+
+  vim /etc/apt/sources.list
+  更改国内源
+  sudo apt-get update
+  
+- nginx 配置 
+
+  - 修改nginx 的配置文件 /etc/nginx/sites-available/default
+
+  在server节点下添加新的location项，指向uwsgi的ip与端口。
+  
+  server {
+      ...
+      location / {
+          uwsgi_pass 127.0.0.1:8000;  # 重定向到127.0.0.1的8000端口
+          include /etc/nginx/uwsgi_params; # 将所有的参数转到uwsgi下
+      }
+      ...
+  }
+  
+- nginx服务控制
+
+  ```shell
+  $ sudo /etc/init.d/nginx start|stop|restart|status
+  # 或
+  $ sudo service nginx start|stop|restart|status
+  
+  ```
+
+  > 通过 start,stop,restart,status 可能实现nginx服务的启动、停止、重启、查扑克状态等操作
+
+- 修改uWSGI配置 
+
+  - 修改`项目文件夹/uwsgi.ini`下的Http通信方式改为socket通信方式,如:
+
+  ```ini
+  [uwsgi]
+  # 去掉如下
+  # http=127.0.0.1:8000
+  # 改为
+  socket=127.0.0.1:8000
+  
+  ```
+
+  - 重启uWSGI服务
+
+  ```shell
+  $ sudo uwsgi --stop uwsgi.pid
+  $ sudo uwsgi --ini 项目文件夹/uwsgi.ini
+  
+  ```
+
+- 测试:
+
+  - 在浏览器端输入<http://127.0.0.1> 进行测试
+  - 注意，此时端口号为80(nginx默认值)
+
+### nginx 配置静态文件路径
+
+uwsgi --version
+
+- 解决静态路径问题
+
+  ```ini
+  # file : /etc/nginx/sites-available/default
+  # 新添加location /static 路由配置，重定向到指定的绝对路径
+  server {
+      ...
+      location /static {
+          # root static文件夹所在的绝对路径,如:
+           ; # 重定向/static请求的路径，这里改为你项目的文件夹
+      }
+      ...
+  }
+  ```
+
+- 修改配置文件后需要重新启动 nginx 服务
+
+### nginx执行流程
+
+1.第一步
+
+```
+cd /etc/nginx/
+ls
+cd sites-enabled/
+ls ->default
+vim default
+:set number   ->显示行号
+找到52行： i#  try...404 
+回到48行：location/{ 
+		uwsgi_pass 127.0.0.1:8000;
+        include /etc/nginx/uwsgi_params;
+        }
+：wq
+```
+
+2.重启另一个终端
+
+```
+ps aux |grep 'uwsgi'
+sudo uwsgi --ini uwsgi.ini
+sudo /etc/init.d/nginx restart
+```
+
+3.查看网页
+
+```
+127.0.0.1/index/book
+响应头：
+server:nginx/1.14.1(ubuntu)
+```
+
+
+
+### 404 界面
+
+- 在模板文件夹内添加 404.html 模版，当视图触发Http404 异常时将会被显示
+
+- 404.html 仅在发布版中(即setting.py 中的 DEBUG=False时) 才起作用
+
+- 当向应处理函数触发Http404异常时就会跳转到404界面
+
+  ```python
+  from django.http import Http404
+  def xxx_view(request):
+      raise Http404  # 直接返回404
+  ```
+
+
 
 ```sh
 $ python3 manage.py makemigrations
