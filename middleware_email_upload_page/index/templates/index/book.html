@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>分页显示book列表</title>
+</head>
+<body>
+
+<a href="/index/book_csv?page={{ page.number }}">导出此页数据</a>
+
+{% for book in page %}
+<p>
+    {{ book.title }}
+</p>
+
+{% endfor %}
+
+{% if page.has_previous %}
+    <a href="/index/book?page={{ page.previous_page_number }}">上一页</a>
+{% else %}
+    上一页
+{% endif %}
+
+
+{% for p in paginator.page_range %}
+
+    {% if p == page.number %}
+        {{ p }}
+    {% else %}
+        <a href="/index/book?page={{ p }}">{{ p }}</a>
+    {% endif %}
+
+{% endfor %}
+
+    {% if page.has_next %}
+        <a href="/index/book?page={{ page.next_page_number }}">下一页</a>
+    {% else %}
+        下一页
+    {% endif %}
+
+
+</body>
+</html>

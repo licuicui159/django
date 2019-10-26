@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form action="" method="post">
+    {% csrf_token %}
+    <p>
+    收件人 <input type="text" value="xx@xx.com" name="rec_addr">
+</p>
+
+<p>
+    <textarea id="" cols="30" rows="10" name="send_msg"></textarea>
+</p>
+<p>
+    <input type="submit" value="发送">
+</p>
+
+
+</form>
+
+</body>
+</html>

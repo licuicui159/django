@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{{ from_addr }}  发送邮件给  {{ rec_addr }}
+成功
+<p>subject=最后测试,</p>
+<p>message={{ send_msg }},</p>
+<p>from_email={{ from_addr }},</p>
+<p>recipient_list=[{{ rec_addr }}]</p>
+
+</body>
+</html>

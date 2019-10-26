@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+
+<a href="/index/send_email">发email</a>
+<table width="300" border="1" cellspacing="0" cellpadding="15">
+    <tr>
+
+        <th>用户名</th>
+        <th>email</th>
+        <th>发email</th>
+    </tr>
+
+{% for email in all_email %}
+    <tr>
+       <td>{{ email.ename }}</td>
+       <td>{{ email.eaddr }}</td>
+       <td><a href="/index/send_email/{{ email.id }}">发送</a></td>
+
+    <tr>
+{% endfor %}
+</table>
+
+</body>
+</html>
