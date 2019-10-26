@@ -4083,7 +4083,7 @@ def make_csv_view(request):
      - 用申请到的QQ号和密码登陆到 <https://mail.qq.com/>
      - 修改 `QQ邮箱->设置->帐户->“POP3/IMAP......服务”`
      - 校验码：ysvkdcmsmkdybcij
-  3. 设置Django服务器端的，用简单邮件传输协议SMTP(Simple Mail Transfer Protocol) 发送电子邮件
+  3. 设置Django服务器端，用简单邮件传输协议SMTP(Simple Mail Transfer Protocol) 发送电子邮件
 - settings.py 设置
 
 ```python
@@ -4254,35 +4254,56 @@ mail.send_mail(subject='测试',message='哈哈哈哈',from_email='765512581@qq.
 
     将　ALLOWED_HOSTS = [] 改为　ALLOWED_HOSTS = ['*']
 
-### uWSGI的运行管理
+### uWSGI的运行流程
 
-  ```
-  创建配置文件,修改路径
+  1.pycham创建配置uWSGI文件,添加路径
   $ touch uwsgi.ini
-  
-  启动uwsgi
-  $ ls
+
+```
+[uwsgi]
+http=127.0.0.1:8000
+chdir=/home/tarena/1907/base04/Ajax/day01-note/mysite8   #修改为项目的绝对路径
+wsgi-file=项目名称/wsgi.py
+process=2
+threads=2
+pidfile=uwsgi.pid
+daemonize=uwsgi.log
+master=true
+```
+
+  2.终端启动uwsgi
+
+```
+  $ cd 1907/base04/Ajax/day01-note/mysite8
   db.sqlite3  index  manage.py  middleware  mysite8  static  uwsgi.ini
-  
+
   $ sudo uwsgi --ini uwsgi.ini
   [sudo] tarena 的密码： 
   [uWSGI] getting INI configuration from uwsgi.ini
-  
+
   $ ps aux|grep 'uwsgi'
-  
-  浏览器打开：http://127.0.0.1:8000/index/book
-  
-  终端打开日志：
+
+  浏览器测试是否正常打开：http://127.0.0.1:8000/index/book
+
+  终端查看uwsgi日志：
   sudo vim uwsgi.log
-  
+
   关闭uwsgi
   sudo uwsgi --stop uwsgi.pid
-  
+
   查看uwsgi状态是否关闭
   ps aux|grep 'uwsgi'
-  ```
+```
 
-  
+​	注意：当uwsgi执行，uwsgi --stop uwsgi.pid失败时，请执行如下命令
+
+cat uwsgi.pid
+
+ps aux|grep 'uwsgi'
+
+$ sudo kill -9 进程id1 进程id2
+
+执行失败原因：在已经启动uwsgi的情况下，重复执行 启动uwsgi命令，导致uwsgi.pid与实际启动的进程id不符
 
   - 启动 uwsgi
 
@@ -4367,17 +4388,16 @@ mail.send_mail(subject='测试',message='哈哈哈哈',from_email='765512581@qq.
   # http=127.0.0.1:8000
   # 改为
   socket=127.0.0.1:8000
-  
   ```
-
-  - 重启uWSGI服务
-
-  ```shell
+  
+- 重启uWSGI服务
+  
+```shell
   $ sudo uwsgi --stop uwsgi.pid
   $ sudo uwsgi --ini 项目文件夹/uwsgi.ini
   
   ```
-
+  
 - 测试:
 
   - 在浏览器端输入<http://127.0.0.1> 进行测试
@@ -4390,12 +4410,16 @@ uwsgi --version
 - 解决静态路径问题
 
   ```ini
+  $ cd /etc/nginx/sites-enabled/
+  vim default
+  
   # file : /etc/nginx/sites-available/default
   # 新添加location /static 路由配置，重定向到指定的绝对路径
   server {
       ...
       location /static {
           # root static文件夹所在的绝对路径,如:
+  /home/tarena/1907/base04/Ajax/day01-note/mysite8
            ; # 重定向/static请求的路径，这里改为你项目的文件夹
       }
       ...
@@ -4406,13 +4430,22 @@ uwsgi --version
 
 ### nginx执行流程
 
-1.第一步
+1.第一步 修改`项目文件夹/uwsgi.ini`下的Http通信方式改为socket通信方式
 
-```
-cd /etc/nginx/
+[uwsgi]
+
+socket=127.0.0.1:8000
+
+2.第二步 添加新的location项，指向uwsgi的ip与端口
+
+$ cd /etc/nginx/sites-enabled
+
 ls
-cd sites-enabled/
-ls ->default
+
+default
+
+sudo su
+
 vim default
 :set number   ->显示行号
 找到52行： i#  try...404 
@@ -4421,27 +4454,59 @@ vim default
         include /etc/nginx/uwsgi_params;
         }
 ：wq
-```
 
-2.重启另一个终端
+注意：静态文件路径配置
+
+$ cd /etc/nginx/sites-enabled/
+vim default
+
+server {  
+    ...
+location /static {
+
+/home/tarena/1907/base04/Ajax/day01-note/mysite8;  修改为项目的绝对路径
+
+​    }
+​    ...
+}
+
+3.重启另一个终端
 
 ```
-ps aux |grep 'uwsgi'
+关闭uwsgi
+sudo uwsgi --stop uwsgi.pid
+  
+查看uwsgi状态是否关闭
+ps aux|grep 'uwsgi'
+
+过滤结果中排除grep
+ps aux |grep 'uwsgi'|grep -v grep
+
+重启nginx
 sudo uwsgi --ini uwsgi.ini
-sudo /etc/init.d/nginx restart
+sudo service nginx restart
 ```
 
-3.查看网页
+4.查看网页
 
 ```
 127.0.0.1/index/book
-响应头：
+
+响应头提示：
 server:nginx/1.14.1(ubuntu)
 ```
 
+### 错误解决
 
+1.正式环境中，Django中代码一旦修改，只有重启uwsgi最新代码才能生效
 
-### 404 界面
+2.浏览器两个特殊现象：
+
+​	1. 浏览器无法连接 - nginx 有问题
+
+​	2. 502错误 - nginx 已启动，但是uwsgi 大概率没启动，或者 nginx 配置中代理的ip和端口 跟您uwsgi配置中的ip端口不一致
+
+### 404 界面 500界面【500.html】
 
 - 在模板文件夹内添加 404.html 模版，当视图触发Http404 异常时将会被显示
 
@@ -4455,9 +4520,10 @@ server:nginx/1.14.1(ubuntu)
       raise Http404  # 直接返回404
   ```
 
-
-
-```sh
-$ python3 manage.py makemigrations
-$ python3 manage.py migrate
 ```
+ps aux |grep 'uwsgi'|grep -v grep
+sudo uwsgi --ini uwsgi.ini
+ps aux |grep 'uwsgi'|grep -v grep
+页面测试
+```
+
